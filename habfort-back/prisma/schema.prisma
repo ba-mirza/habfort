@@ -23,6 +23,7 @@ model User {
 
   walletTransactions WalletTransaction[]
   habits             Habit[]
+  habitHistory       HabitHistory[]
 }
 
 enum HabitType {
@@ -59,7 +60,8 @@ model Habit {
   status       HabitStatus            @default(ACTIVE)
   createdAt    DateTime               @default(now())
 
-  logs HabitLog[]
+  logs    HabitLog[]
+  history HabitHistory[]
 
   @@index([userId])
   @@index([userId, type])
@@ -74,6 +76,33 @@ model HabitLog {
   createdAt DateTime @default(now())
 
   @@unique([habitId, date])
+}
+
+enum HabitHistoryStatus {
+  COMPLETED
+  NOT_COMPLETED
+  PARTIAL
+}
+
+// Independent of Habit (habitId is SetNull on delete) — this is the source of
+// truth for analytics/history and must survive the active Habit row being deleted.
+model HabitHistory {
+  id            String             @id @default(uuid())
+  userId        String
+  user          User               @relation(fields: [userId], references: [id])
+  habitId       String?
+  habit         Habit?             @relation(fields: [habitId], references: [id], onDelete: SetNull)
+  habitName     String
+  habitType     HabitType
+  status        HabitHistoryStatus
+  daysCompleted Int? // conditional only
+  daysRequired  Int? // conditional only
+  coinsAwarded  Int
+  startedAt     DateTime
+  endedAt       DateTime           @default(now())
+
+  @@index([userId])
+  @@index([userId, status])
 }
 
 enum WalletSourceType {

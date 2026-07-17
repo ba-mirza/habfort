@@ -14,6 +14,7 @@ import { CurrentUser } from '../auth/current-user.decorator';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { CreateHabitDto } from './dto/create-habit.dto';
+import { LogHabitDayDto } from './dto/log-habit-day.dto';
 import { UpdateHabitDto } from './dto/update-habit.dto';
 import { HabitsService } from './habits.service';
 
@@ -50,5 +51,24 @@ export class HabitsController {
   @HttpCode(HttpStatus.NO_CONTENT)
   remove(@CurrentUser() user: SupabaseJwtPayload, @Param('id') id: string) {
     return this.habitsService.remove(user.sub, id);
+  }
+
+  @Post(':id/complete')
+  complete(@CurrentUser() user: SupabaseJwtPayload, @Param('id') id: string) {
+    return this.habitsService.completeHabit(user.sub, id);
+  }
+
+  @Post(':id/log')
+  log(
+    @CurrentUser() user: SupabaseJwtPayload,
+    @Param('id') id: string,
+    @Body() dto: LogHabitDayDto,
+  ) {
+    return this.habitsService.logHabitDay(
+      user.sub,
+      id,
+      dto.date,
+      dto.completed,
+    );
   }
 }
