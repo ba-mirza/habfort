@@ -22,6 +22,58 @@ model User {
   createdAt DateTime @default(now())
 
   walletTransactions WalletTransaction[]
+  habits             Habit[]
+}
+
+enum HabitType {
+  INSTANT
+  CONDITIONAL
+  RECURRING
+}
+
+enum HabitDifficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum HabitStatus {
+  ACTIVE
+}
+
+enum RecurringScheduleType {
+  DAILY
+  DAYS_OF_WEEK
+}
+
+model Habit {
+  id           String                 @id @default(uuid())
+  userId       String
+  user         User                   @relation(fields: [userId], references: [id])
+  name         String
+  type         HabitType
+  difficulty   HabitDifficulty
+  requiredDays Int? // conditional only
+  scheduleType RecurringScheduleType? // recurring only
+  scheduleDays Int[]                  @default([]) // recurring + DAYS_OF_WEEK only (0=Sun..6=Sat)
+  status       HabitStatus            @default(ACTIVE)
+  createdAt    DateTime               @default(now())
+
+  logs HabitLog[]
+
+  @@index([userId])
+  @@index([userId, type])
+}
+
+model HabitLog {
+  id        String   @id @default(uuid())
+  habitId   String
+  habit     Habit    @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  date      DateTime @db.Date
+  completed Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@unique([habitId, date])
 }
 
 enum WalletSourceType {

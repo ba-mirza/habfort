@@ -6,6 +6,7 @@ import { validate } from './config/env.validation';
 import habitsConfig from './config/habits.config';
 import rewardsConfig from './config/rewards.config';
 import supabaseConfig from './config/supabase.config';
+import { HabitsModule } from './habits/habits.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
@@ -21,6 +22,7 @@ import { WalletModule } from './wallet/wallet.module';
     AuthModule,
     UsersModule,
     WalletModule,
+    HabitsModule,
   ],
 })
 export class AppModule {}
