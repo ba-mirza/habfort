@@ -1,0 +1,23 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User.id intentionally has no @default — it must equal the Supabase
+// auth.users.id (JWT `sub` claim), so authenticated requests map 1:1
+// to rows without a second identity system.
+model User {
+  id        String   @id
+  email     String?  @unique
+  createdAt DateTime @default(now())
+}
