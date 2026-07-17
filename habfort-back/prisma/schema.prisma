@@ -24,6 +24,7 @@ model User {
   walletTransactions WalletTransaction[]
   habits             Habit[]
   habitHistory       HabitHistory[]
+  dailyBonusLogs     DailyBonusLog[]
 }
 
 enum HabitType {
@@ -103,6 +104,20 @@ model HabitHistory {
 
   @@index([userId])
   @@index([userId, status])
+}
+
+// Dedicated idempotency ledger for the FULL-day bonus rather than a query
+// against WalletTransaction — the unique constraint below makes double-award
+// impossible under concurrent requests, which a check-then-insert against a
+// timestamped ledger row could not guarantee.
+model DailyBonusLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  date      DateTime @db.Date
+  createdAt DateTime @default(now())
+
+  @@unique([userId, date])
 }
 
 enum WalletSourceType {

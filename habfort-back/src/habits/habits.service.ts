@@ -14,6 +14,7 @@ import {
 } from '../../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
+import { BonusService } from './bonus.service';
 import {
   addDays,
   diffDays,
@@ -29,6 +30,7 @@ export class HabitsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly walletService: WalletService,
+    private readonly bonusService: BonusService,
     private readonly configService: ConfigService,
   ) {}
 
@@ -165,7 +167,7 @@ export class HabitsService {
       return existing;
     }
 
-    return this.prisma.$transaction(async (tx) => {
+    const log = await this.prisma.$transaction(async (tx) => {
       const log = await tx.habitLog.upsert({
         where: { habitId_date: { habitId: habit.id, date } },
         update: { completed },
@@ -192,6 +194,13 @@ export class HabitsService {
       }
       return log;
     });
+
+    // Only a fresh completion can newly satisfy "everything due today" —
+    // unchecking can't, so the bonus check only runs on the credit path.
+    if (completed) {
+      await this.bonusService.checkAndAwardFullDayBonus(habit.userId, date);
+    }
+    return log;
   }
 
   // Silence, not a visit, is what closes a broken conditional streak: once a
