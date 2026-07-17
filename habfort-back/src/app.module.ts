@@ -8,6 +8,7 @@ import rewardsConfig from './config/rewards.config';
 import supabaseConfig from './config/supabase.config';
 import { PrismaModule } from './prisma/prisma.module';
 import { UsersModule } from './users/users.module';
+import { WalletModule } from './wallet/wallet.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { UsersModule } from './users/users.module';
     PrismaModule,
     AuthModule,
     UsersModule,
+    WalletModule,
   ],
 })
 export class AppModule {}

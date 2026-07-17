@@ -25,6 +25,19 @@
 
 [Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
 
+## Environment setup
+
+Copy `.env.example` to `.env` and fill in `SUPABASE_URL`/`SUPABASE_JWT_AUDIENCE` from your Supabase project
+(used only to verify JWTs — Auth stays on Supabase). For local development, Postgres runs in Docker:
+
+```bash
+docker compose up -d       # starts local Postgres on localhost:5433
+npx prisma migrate deploy  # applies existing migrations
+```
+
+Production points `DATABASE_URL` at Supabase (or wherever Postgres is hosted) instead — see the
+commented-out line in `.env.example`.
+
 ## Project setup
 
 ```bash

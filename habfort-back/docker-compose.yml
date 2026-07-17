@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: habits
+      POSTGRES_PASSWORD: habits
+      POSTGRES_DB: habits
+    ports:
+      - '5433:5432'
+    volumes:
+      - habits_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  habits_postgres_data:

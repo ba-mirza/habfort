@@ -20,4 +20,27 @@ model User {
   id        String   @id
   email     String?  @unique
   createdAt DateTime @default(now())
+
+  walletTransactions WalletTransaction[]
+}
+
+enum WalletSourceType {
+  HABIT_COMPLETION
+  FULL_BONUS
+  REDEEM
+}
+
+model WalletTransaction {
+  id         String           @id @default(uuid())
+  userId     String
+  user       User             @relation(fields: [userId], references: [id])
+  amount     Int
+  sourceType WalletSourceType
+  // HabitHistory.id | DailyBonusLog.id | Redeem.id | HabitLog.id (reversal) — added once those models exist
+  sourceId   String?
+  createdAt  DateTime         @default(now())
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([sourceType, sourceId])
 }
