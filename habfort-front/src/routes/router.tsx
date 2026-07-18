@@ -1,8 +1,12 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { AppShell } from '../components/layout/app-shell';
+import { AuthenticatedLayout } from '../components/layout/authenticated-layout';
 import { LoginPage } from '../features/auth/login-page';
 import { SignupPage } from '../features/auth/signup-page';
-import { HomePage } from '../features/home/home-page';
+import { DashboardPage } from '../features/habits/dashboard-page';
+import { HistoryPage } from '../features/history/history-page';
+import { RewardsPage } from '../features/rewards/rewards-page';
+import { SettingsPage } from '../features/settings/settings-page';
 import { ProtectedRoute, PublicOnlyRoute } from './route-guards';
 
 export const router = createBrowserRouter([
@@ -18,7 +22,17 @@ export const router = createBrowserRouter([
       },
       {
         element: <ProtectedRoute />,
-        children: [{ path: '/', element: <HomePage /> }],
+        children: [
+          {
+            element: <AuthenticatedLayout />,
+            children: [
+              { path: '/', element: <DashboardPage /> },
+              { path: '/rewards', element: <RewardsPage /> },
+              { path: '/history', element: <HistoryPage /> },
+              { path: '/settings', element: <SettingsPage /> },
+            ],
+          },
+        ],
       },
     ],
   },

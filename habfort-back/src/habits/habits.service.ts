@@ -50,10 +50,28 @@ export class HabitsService {
 
   async findAll(userId: string) {
     await this.reconcileConditionalGaps(userId);
-    return this.prisma.habit.findMany({
+    const habits = await this.prisma.habit.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
+
+    // currentStreak is a read-time-only field for the frontend's progress
+    // display (e.g. "12/30 days") — it isn't persisted anywhere, since the
+    // authoritative streak calculation only matters at closure time.
+    return Promise.all(
+      habits.map(async (habit) => {
+        if (habit.type !== HabitType.CONDITIONAL) {
+          return habit;
+        }
+        const startDate = normalizeDate(habit.createdAt);
+        const currentStreak = await this.computeConsecutiveStreak(
+          habit.id,
+          startDate,
+          today(),
+        );
+        return { ...habit, currentStreak };
+      }),
+    );
   }
 
   async findOne(userId: string, id: string) {
