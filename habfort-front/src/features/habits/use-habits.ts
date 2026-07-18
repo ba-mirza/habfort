@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '../../lib/api';
 
 export type HabitType = 'INSTANT' | 'CONDITIONAL' | 'RECURRING';
@@ -24,5 +24,24 @@ export function useHabits() {
   return useQuery({
     queryKey: ['habits'],
     queryFn: () => api.get<Habit[]>('/habits'),
+  });
+}
+
+export interface CreateHabitPayload {
+  name: string;
+  type: HabitType;
+  difficulty: HabitDifficulty;
+  requiredDays?: number;
+  scheduleType?: RecurringScheduleType;
+  scheduleDays?: number[];
+}
+
+export function useCreateHabit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateHabitPayload) => api.post<Habit>('/habits', payload),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['habits'] });
+    },
   });
 }
