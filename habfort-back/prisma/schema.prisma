@@ -25,6 +25,8 @@ model User {
   habits             Habit[]
   habitHistory       HabitHistory[]
   dailyBonusLogs     DailyBonusLog[]
+  rewards            Reward[]
+  redeems            Redeem[]
 }
 
 enum HabitType {
@@ -118,6 +120,34 @@ model DailyBonusLog {
   createdAt DateTime @default(now())
 
   @@unique([userId, date])
+}
+
+// Soft-delete via archivedAt (not a hard DELETE) so existing Redeem rows keep
+// a valid reference — a reward can be redeemed many times before it's archived.
+model Reward {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  name       String
+  costCoins  Int
+  archivedAt DateTime?
+  createdAt  DateTime  @default(now())
+
+  redeems Redeem[]
+
+  @@index([userId])
+}
+
+model Redeem {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  rewardId    String
+  reward      Reward   @relation(fields: [rewardId], references: [id])
+  amountSpent Int
+  redeemedAt  DateTime @default(now())
+
+  @@index([userId])
 }
 
 enum WalletSourceType {

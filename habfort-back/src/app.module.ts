@@ -8,6 +8,8 @@ import rewardsConfig from './config/rewards.config';
 import supabaseConfig from './config/supabase.config';
 import { HabitsModule } from './habits/habits.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RedeemsModule } from './redeems/redeems.module';
+import { RewardsModule } from './rewards/rewards.module';
 import { UsersModule } from './users/users.module';
 import { WalletModule } from './wallet/wallet.module';
 
@@ -23,6 +25,8 @@ import { WalletModule } from './wallet/wallet.module';
     UsersModule,
     WalletModule,
     HabitsModule,
+    RewardsModule,
+    RedeemsModule,
   ],
 })
 export class AppModule {}
