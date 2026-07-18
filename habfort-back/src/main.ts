@@ -16,6 +16,11 @@ async function bootstrap() {
   );
   app.useGlobalFilters(new AllExceptionsFilter());
 
+  const configService = app.get(ConfigService);
+  app.enableCors({
+    origin: configService.getOrThrow<string>('app.corsOrigin'),
+  });
+
   const swaggerConfig = new DocumentBuilder()
     .setTitle('Habits API')
     .setDescription('Habit tracker with a token economy')
@@ -25,7 +30,6 @@ async function bootstrap() {
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('docs', app, swaggerDocument);
 
-  const configService = app.get(ConfigService);
   const port = configService.getOrThrow<number>('app.port');
   await app.listen(port);
 }
