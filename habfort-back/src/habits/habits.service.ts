@@ -304,7 +304,11 @@ export class HabitsService {
         );
       }
       await tx.habit.delete({ where: { id: habit.id } });
-      return history;
+      // Deleting the habit triggers the SetNull FK action on habitId, but the
+      // in-memory `history` object from `create()` above still holds the
+      // pre-delete value — re-fetch so the response reflects what's actually
+      // persisted (habitId: null), not a stale snapshot.
+      return tx.habitHistory.findUniqueOrThrow({ where: { id: history.id } });
     });
   }
 

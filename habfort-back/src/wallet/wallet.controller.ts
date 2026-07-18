@@ -1,10 +1,13 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
 import { ListTransactionsQueryDto } from './dto/list-transactions-query.dto';
 import { WalletService } from './wallet.service';
 
+@ApiTags('wallet')
+@ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
 @Controller('wallet')
 export class WalletController {

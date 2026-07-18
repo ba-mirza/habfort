@@ -38,6 +38,19 @@ npx prisma migrate deploy  # applies existing migrations
 Production points `DATABASE_URL` at Supabase (or wherever Postgres is hosted) instead — see the
 commented-out line in `.env.example`.
 
+To seed sample habits/rewards for local exploration:
+
+```bash
+SEED_USER_ID=<your-supabase-user-id> npx prisma db seed
+```
+
+Omit `SEED_USER_ID` to seed against a placeholder id (fine for browsing via Prisma Studio, but
+not usable through the API since it won't match any real JWT).
+
+## API docs
+
+Once the app is running, interactive Swagger docs are served at `/docs`.
+
 ## Project setup
 
 ```bash

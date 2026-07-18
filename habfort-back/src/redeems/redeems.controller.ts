@@ -1,10 +1,13 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { CreateRedeemDto } from './dto/create-redeem.dto';
 import { RedeemsService } from './redeems.service';
 
+@ApiTags('redeems')
+@ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
 @Controller('redeems')
 export class RedeemsController {

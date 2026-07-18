@@ -7,12 +7,15 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import { CreateRewardDto } from './dto/create-reward.dto';
 import { RewardsService } from './rewards.service';
 
+@ApiTags('rewards')
+@ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
 @Controller('rewards')
 export class RewardsController {

@@ -10,6 +10,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
@@ -18,6 +19,8 @@ import { LogHabitDayDto } from './dto/log-habit-day.dto';
 import { UpdateHabitDto } from './dto/update-habit.dto';
 import { HabitsService } from './habits.service';
 
+@ApiTags('habits')
+@ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
 @Controller('habits')
 export class HabitsController {
