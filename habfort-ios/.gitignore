@@ -1,0 +1,12 @@
+# Xcode
+xcuserdata/
+*.xcuserstate
+.DS_Store
+
+# Build products (also outside the repo in DerivedData by default, but just in case)
+build/
+DerivedData/
+
+# Swift Package Manager
+.swiftpm/
+.build/
