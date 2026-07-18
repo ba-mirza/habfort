@@ -55,21 +55,32 @@ export class HabitsService {
       orderBy: { createdAt: 'desc' },
     });
 
-    // currentStreak is a read-time-only field for the frontend's progress
-    // display (e.g. "12/30 days") — it isn't persisted anywhere, since the
-    // authoritative streak calculation only matters at closure time.
+    // currentStreak/isCompletedToday are read-time-only fields for the
+    // frontend (progress display, today's hold-to-confirm rest state) —
+    // neither is persisted, both are derived from HabitLog on every read.
+    const todayDate = today();
     return Promise.all(
       habits.map(async (habit) => {
-        if (habit.type !== HabitType.CONDITIONAL) {
+        if (habit.type === HabitType.INSTANT) {
           return habit;
         }
-        const startDate = normalizeDate(habit.createdAt);
-        const currentStreak = await this.computeConsecutiveStreak(
-          habit.id,
-          startDate,
-          today(),
-        );
-        return { ...habit, currentStreak };
+
+        const todayLog = await this.prisma.habitLog.findUnique({
+          where: { habitId_date: { habitId: habit.id, date: todayDate } },
+        });
+        const isCompletedToday = todayLog?.completed ?? false;
+
+        if (habit.type === HabitType.CONDITIONAL) {
+          const startDate = normalizeDate(habit.createdAt);
+          const currentStreak = await this.computeConsecutiveStreak(
+            habit.id,
+            startDate,
+            todayDate,
+          );
+          return { ...habit, currentStreak, isCompletedToday };
+        }
+
+        return { ...habit, isCompletedToday };
       }),
     );
   }

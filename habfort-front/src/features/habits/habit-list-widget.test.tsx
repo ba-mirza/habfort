@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import type { ReactElement } from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { api } from '../../lib/api';
@@ -7,8 +7,15 @@ import { HabitListWidget } from './habit-list-widget';
 import type { Habit } from './use-habits';
 
 vi.mock('../../lib/api', () => ({
-  api: { get: vi.fn() },
+  api: { get: vi.fn(), post: vi.fn() },
 }));
+
+function holdToComplete(name: string | RegExp) {
+  const control = screen.getByRole('button', { name });
+  fireEvent.pointerDown(control);
+  const fill = control.querySelector('[data-testid="hold-fill"]')!;
+  fireEvent.transitionEnd(fill, { propertyName: 'width' });
+}
 
 function renderWithClient(ui: ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -72,5 +79,41 @@ describe('HabitListWidget', () => {
     renderWithClient(<HabitListWidget />);
 
     expect(await screen.findByText(/no habits yet/i)).toBeInTheDocument();
+  });
+
+  it('holding an instant habit calls the complete endpoint', async () => {
+    vi.mocked(api.get).mockResolvedValue(habits);
+    vi.mocked(api.post).mockResolvedValue({});
+
+    renderWithClient(<HabitListWidget />);
+    await screen.findByText('Drink water');
+
+    holdToComplete(/hold to complete drink water/i);
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/habits/1/complete'));
+  });
+
+  it('holding a not-yet-done recurring habit logs it as completed', async () => {
+    vi.mocked(api.get).mockResolvedValue(habits);
+    vi.mocked(api.post).mockResolvedValue({});
+
+    renderWithClient(<HabitListWidget />);
+    await screen.findByText('Gym');
+
+    holdToComplete(/hold to mark gym done today/i);
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/habits/3/log', { completed: true }));
+  });
+
+  it('holding an already-done habit logs it as undone', async () => {
+    vi.mocked(api.get).mockResolvedValue(habits.map((h) => (h.id === '3' ? { ...h, isCompletedToday: true } : h)));
+    vi.mocked(api.post).mockResolvedValue({});
+
+    renderWithClient(<HabitListWidget />);
+    await screen.findByText('Gym');
+
+    holdToComplete(/hold to undo gym/i);
+
+    await waitFor(() => expect(api.post).toHaveBeenCalledWith('/habits/3/log', { completed: false }));
   });
 });
