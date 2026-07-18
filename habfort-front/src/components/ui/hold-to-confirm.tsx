@@ -2,11 +2,8 @@ import { useState, type KeyboardEvent, type ReactNode, type TransitionEvent } fr
 
 interface HoldToConfirmProps {
   onConfirm: () => void;
-  /** Fill width while at rest (not being held) — 0 for "not done", 100 for "already done". */
-  atRestPercent?: number;
-  /** Fill width the hold animates toward; reaching it (uninterrupted) fires onConfirm. */
-  holdTargetPercent?: number;
   holdDurationMs?: number;
+  /** Color of the transient fill while holding — the card itself never carries a status color at rest. */
   fillClassName?: string;
   disabled?: boolean;
   className?: string;
@@ -20,10 +17,11 @@ const RELEASE_MS = 150;
 // Hold-to-confirm, not tap-to-confirm: releasing early cancels with no
 // effect, so this replaces a separate "are you sure?" dialog for actions
 // that credit/debit the wallet — the deliberate hold duration is the guard.
+// The fill is purely transient hold-in-progress feedback: it always rests at
+// 0% (no persistent status color on the card), regardless of what holding
+// this control would do.
 export function HoldToConfirm({
   onConfirm,
-  atRestPercent = 0,
-  holdTargetPercent = 100,
   holdDurationMs = DEFAULT_HOLD_MS,
   fillClassName = 'bg-green-500/30',
   disabled,
@@ -47,7 +45,7 @@ export function HoldToConfirm({
     if (e.propertyName !== 'width') {
       return;
     }
-    // Still holding when the fill reaches its target = an uninterrupted hold.
+    // Still holding when the fill reaches 100% = an uninterrupted hold.
     if (isHolding) {
       setIsHolding(false);
       onConfirm();
@@ -82,10 +80,9 @@ export function HoldToConfirm({
       onKeyUp={handleKeyUp}
     >
       <div
-        data-testid="hold-fill"
         className={`absolute inset-y-0 left-0 ${fillClassName}`}
         style={{
-          width: `${isHolding ? holdTargetPercent : atRestPercent}%`,
+          width: `${isHolding ? 100 : 0}%`,
           transitionProperty: 'width',
           transitionDuration: `${isHolding ? holdDurationMs : RELEASE_MS}ms`,
           transitionTimingFunction: isHolding ? 'linear' : 'ease-out',

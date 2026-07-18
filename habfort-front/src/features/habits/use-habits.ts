@@ -73,3 +73,13 @@ export function useLogHabitDay() {
     onSuccess: () => invalidateHabitsAndBalance(queryClient),
   });
 }
+
+export function useDeleteHabit() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (habitId: string) => api.delete(`/habits/${habitId}`),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['habits'] });
+    },
+  });
+}

@@ -10,6 +10,7 @@ import {
   HabitHistoryStatus,
   HabitStatus,
   HabitType,
+  RecurringScheduleType,
   WalletSourceType,
 } from '../../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
@@ -188,6 +189,7 @@ export class HabitsService {
     completed: boolean,
   ) {
     const date = this.resolveLogDate(habit, dateInput);
+    this.assertScheduledOn(habit, date);
     const existing = await this.prisma.habitLog.findUnique({
       where: { habitId_date: { habitId: habit.id, date } },
     });
@@ -351,6 +353,18 @@ export class HabitsService {
       throw new BadRequestException('Cannot log a future date');
     }
     return date;
+  }
+
+  // DAILY has no day-of-week restriction; DAYS_OF_WEEK can only be logged on
+  // one of its scheduled weekdays — completing "early" on an off day isn't
+  // a real completion of that day's occurrence.
+  private assertScheduledOn(habit: Habit, date: Date): void {
+    if (
+      habit.scheduleType === RecurringScheduleType.DAYS_OF_WEEK &&
+      !habit.scheduleDays.includes(date.getUTCDay())
+    ) {
+      throw new BadRequestException('This habit is not scheduled for this day');
+    }
   }
 
   private coinsFor(difficulty: HabitDifficulty): number {
