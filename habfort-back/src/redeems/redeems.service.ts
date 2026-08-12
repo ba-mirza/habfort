@@ -47,10 +47,13 @@ export class RedeemsService {
     });
   }
 
+  // Includes the reward name: archived rewards are filtered out of
+  // GET /rewards, so a client can't resolve the name from that list alone.
   findAll(userId: string) {
     return this.prisma.redeem.findMany({
       where: { userId },
       orderBy: { redeemedAt: 'desc' },
+      include: { reward: { select: { id: true, name: true } } },
     });
   }
 }

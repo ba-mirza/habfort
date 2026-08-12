@@ -28,10 +28,10 @@ export class RewardsService {
     });
   }
 
-  findAll(userId: string) {
+  findAll(userId: string, archived = false) {
     return this.prisma.reward.findMany({
-      where: { userId, archivedAt: null },
-      orderBy: { createdAt: 'desc' },
+      where: { userId, archivedAt: archived ? { not: null } : null },
+      orderBy: archived ? { archivedAt: 'desc' } : { createdAt: 'desc' },
     });
   }
 
@@ -43,6 +43,17 @@ export class RewardsService {
     return this.prisma.reward.update({
       where: { id },
       data: { archivedAt: new Date() },
+    });
+  }
+
+  async restore(userId: string, id: string) {
+    const reward = await this.getOwnedReward(userId, id);
+    if (!reward.archivedAt) {
+      return reward;
+    }
+    return this.prisma.reward.update({
+      where: { id },
+      data: { archivedAt: null },
     });
   }
 
