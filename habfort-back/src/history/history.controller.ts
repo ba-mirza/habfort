@@ -29,4 +29,12 @@ export class HistoryController {
   ) {
     return this.historyService.stats(user.sub, query);
   }
+
+  @Get('discipline')
+  discipline(
+    @CurrentUser() user: SupabaseJwtPayload,
+    @Query() query: DateRangeQueryDto,
+  ) {
+    return this.historyService.discipline(user.sub, query);
+  }
 }
