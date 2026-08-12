@@ -21,35 +21,41 @@ struct SettingsView: View {
     var body: some View {
         List {
             Section {
-                VStack(spacing: 12) {
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 64))
-                        .foregroundStyle(Color.accentColor)
-
-                    Text(email)
-                        .font(.headline)
-
-                    HStack(spacing: 4) {
-                        Image(systemName: "seal.fill")
-                        Text("\(viewModel.walletBalance)")
-                            .font(.subheadline.bold())
-                    }
-                    .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 5)
-                    .background(Color.accentColor.opacity(0.15), in: Capsule())
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 8)
+                ProfilePanelView(email: email, viewModel: viewModel)
             }
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            .listRowBackground(Color.clear)
             .listRowSeparator(.hidden)
 
-            Section("Успешность привычек") {
-                if let stats = viewModel.stats, stats.totalEntries > 0 {
-                    HabitSuccessChartView(stats: stats)
+            if let errorMessage = viewModel.errorMessage {
+                Section {
+                    Text(errorMessage)
+                        .foregroundStyle(.red)
+                }
+            }
+
+            Section("Ритм за 30 дней") {
+                if let byDay = viewModel.discipline?.byDay, !byDay.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        ActivityStrip(days: byDay)
+                        Text("Высота столбика — доля выполненного за день.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.vertical, 4)
                 } else {
-                    Text("Пока нет завершённых привычек.")
+                    Text("Пока нет данных за период.")
                         .foregroundStyle(.secondary)
+                }
+            }
+
+            Section("Состав привычек") {
+                if viewModel.habitCountsByType.isEmpty {
+                    Text("Активных привычек нет.")
+                        .foregroundStyle(.secondary)
+                } else {
+                    HabitCompositionBar(counts: viewModel.habitCountsByType)
+                        .padding(.vertical, 6)
                 }
             }
 
@@ -77,6 +83,7 @@ struct SettingsView: View {
         }
         .navigationTitle("Профиль")
         .navigationBarTitleDisplayMode(.inline)
+        .refreshable { await viewModel.load(apiClient: apiClient) }
         .task { await viewModel.load(apiClient: apiClient) }
     }
 }

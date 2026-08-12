@@ -36,6 +36,9 @@ struct HabitsView: View {
         } else {
             ForEach(viewModel.todaysHabits) { habit in
                 HabitRowView(habit: habit)
+                    // A plain List draws a separator above its first row too,
+                    // which reads as a stray border under the title.
+                    .listRowSeparator(habit.id == viewModel.todaysHabits.first?.id ? .hidden : .visible, edges: .top)
                     .swipeActions(edge: .leading) {
                         Button {
                             Task { await toggleCompletion(habit) }
