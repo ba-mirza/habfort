@@ -9,8 +9,8 @@ nonisolated enum AppConfig {
     #else
     // Release builds (TestFlight/App Store) must use HTTPS — App Transport
     // Security blocks plain http, and localhost on a tester's phone is the
-    // phone itself. Replace with the real Railway domain after deploying.
-    static let apiBaseURL = URL(string: "https://REPLACE-ME.up.railway.app")!
+    // phone itself.
+    static let apiBaseURL = URL(string: "https://habfort-production.up.railway.app")!
     #endif
 
     static let supabaseURL = URL(string: "https://roltsakilealicnrywtm.supabase.co")!
