@@ -33,7 +33,7 @@ struct SplashView: View {
 
             VStack {
                 Spacer()
-                Text("Привычки")
+                Text("Beles App")
                     .font(.largeTitle.bold())
                     .opacity(titleVisible ? 1 : 0)
                     .offset(y: titleVisible ? 0 : 8)
