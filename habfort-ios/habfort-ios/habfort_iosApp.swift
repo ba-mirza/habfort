@@ -11,6 +11,7 @@ import SwiftUI
 struct habfort_iosApp: App {
     @State private var authManager: AuthManager
     @State private var apiClient: APIClient
+    @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     init() {
         let authManager = AuthManager(client: SupabaseService.shared)
@@ -23,6 +24,7 @@ struct habfort_iosApp: App {
             RootView()
                 .environment(authManager)
                 .environment(apiClient)
+                .preferredColorScheme((AppTheme(rawValue: appThemeRaw) ?? .system).colorScheme)
         }
     }
 }

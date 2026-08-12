@@ -9,9 +9,9 @@ enum HabitType: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .instant: "One-off"
-        case .conditional: "Streak"
-        case .recurring: "Recurring"
+        case .instant: "Разовые"
+        case .conditional: "Челленджи"
+        case .recurring: "Регулярные"
         }
     }
 }
@@ -25,9 +25,9 @@ enum HabitDifficulty: String, Codable, CaseIterable, Identifiable {
 
     var displayName: String {
         switch self {
-        case .easy: "Easy"
-        case .medium: "Medium"
-        case .hard: "Hard"
+        case .easy: "Лёгкая"
+        case .medium: "Средняя"
+        case .hard: "Сложная"
         }
     }
 }
@@ -50,4 +50,13 @@ struct Habit: Codable, Identifiable, Hashable {
     let createdAt: String
     var currentStreak: Int?
     var isCompletedToday: Bool?
+
+    // DAILY recurring habits and non-recurring types are always "due"; a
+    // DAYS_OF_WEEK habit is only due on its scheduled weekdays. Mirrors the
+    // backend's `assertScheduledOn` gating in HabitsService.
+    var isScheduledToday: Bool {
+        guard type == .recurring, scheduleType == .daysOfWeek else { return true }
+        let todayWeekday = Calendar.current.component(.weekday, from: Date()) - 1
+        return scheduleDays.contains(todayWeekday)
+    }
 }

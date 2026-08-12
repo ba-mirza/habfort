@@ -10,36 +10,57 @@ struct CreateHabitView: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Habit") {
-                    TextField("Name", text: $formViewModel.name)
+                Section("Привычка") {
+                    TextField("Название", text: $formViewModel.name)
+                }
 
-                    Picker("Type", selection: $formViewModel.type) {
-                        ForEach(HabitType.allCases) { type in
-                            Text(type.displayName).tag(type)
-                        }
+                Section {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Тип")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ColoredChipPicker(
+                            items: HabitType.allCases,
+                            selection: $formViewModel.type,
+                            icon: \.iconName,
+                            label: \.displayName,
+                            colors: \.chipColors
+                        )
                     }
-                    .pickerStyle(.segmented)
+                    .listRowSeparator(.hidden)
 
-                    Picker("Difficulty", selection: $formViewModel.difficulty) {
-                        ForEach(HabitDifficulty.allCases) { difficulty in
-                            Text(difficulty.displayName).tag(difficulty)
-                        }
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Сложность")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        ColoredChipPicker(
+                            items: HabitDifficulty.allCases,
+                            selection: $formViewModel.difficulty,
+                            icon: \.iconName,
+                            label: \.displayName,
+                            colors: \.chipColors
+                        )
                     }
-                    .pickerStyle(.segmented)
+                    .listRowSeparator(.hidden)
+                }
+
+                Section("Что начислится") {
+                    HabitRewardInfoView(viewModel: formViewModel)
                 }
 
                 if formViewModel.type == .conditional {
-                    Section("Streak length") {
-                        TextField("Required days", text: $formViewModel.requiredDaysText)
+                    Section("Длина челленджа") {
+                        TextField("Количество дней", text: $formViewModel.requiredDaysText)
                             .keyboardType(.numberPad)
                     }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
                 if formViewModel.type == .recurring {
-                    Section("Schedule") {
-                        Picker("Repeats", selection: $formViewModel.scheduleType) {
-                            Text("Every day").tag(RecurringScheduleType.daily)
-                            Text("Specific days").tag(RecurringScheduleType.daysOfWeek)
+                    Section("Расписание") {
+                        Picker("Повтор", selection: $formViewModel.scheduleType) {
+                            Text("Каждый день").tag(RecurringScheduleType.daily)
+                            Text("Определённые дни").tag(RecurringScheduleType.daysOfWeek)
                         }
                         .pickerStyle(.segmented)
 
@@ -47,6 +68,7 @@ struct CreateHabitView: View {
                             DayOfWeekPicker(selection: $formViewModel.scheduleDays)
                         }
                     }
+                    .transition(.opacity.combined(with: .move(edge: .top)))
                 }
 
                 if let errorMessage = formViewModel.errorMessage {
@@ -60,20 +82,24 @@ struct CreateHabitView: View {
                     Button {
                         Task { await submit() }
                     } label: {
-                        if formViewModel.isSubmitting {
-                            HStack {
-                                Spacer()
+                        Group {
+                            if formViewModel.isSubmitting {
                                 ProgressView()
-                                Spacer()
+                            } else {
+                                Text("Создать привычку")
                             }
-                        } else {
-                            Text("Create Habit")
                         }
+                        .frame(maxWidth: .infinity)
                     }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
                     .disabled(!formViewModel.isValid || formViewModel.isSubmitting)
+                    .listRowBackground(Color.clear)
                 }
             }
-            .navigationTitle("Create")
+            .animation(.easeInOut(duration: 0.25), value: formViewModel.type)
+            .navigationTitle("Создание")
+            .task { await formViewModel.loadEconomy(apiClient: apiClient) }
         }
     }
 

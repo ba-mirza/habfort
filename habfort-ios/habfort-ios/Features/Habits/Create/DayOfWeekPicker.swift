@@ -3,7 +3,7 @@ import SwiftUI
 struct DayOfWeekPicker: View {
     @Binding var selection: Set<Int>
 
-    private let symbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    private let symbols = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
 
     var body: some View {
         HStack(spacing: 6) {

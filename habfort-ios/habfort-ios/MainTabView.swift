@@ -11,19 +11,19 @@ struct MainTabView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             HabitsView(viewModel: habitsViewModel)
-                .tabItem { Label("Habits", systemImage: "checklist") }
+                .tabItem { Label("Привычки", systemImage: "checklist") }
                 .tag(AppTab.habits)
 
-            Text("Rewards — Phase 5")
-                .tabItem { Label("Rewards", systemImage: "gift") }
+            RewardsView()
+                .tabItem { Label("Награды", systemImage: "gift") }
                 .tag(AppTab.rewards)
 
-            Text("History — Phase 6")
-                .tabItem { Label("History", systemImage: "clock") }
+            HistoryView()
+                .tabItem { Label("История", systemImage: "clock") }
                 .tag(AppTab.history)
 
             CreateHabitView(habitsViewModel: habitsViewModel, selectedTab: $selectedTab)
-                .tabItem { Label("Create", systemImage: "plus.circle") }
+                .tabItem { Label("Создать", systemImage: "plus.circle") }
                 .tag(AppTab.create)
         }
     }

@@ -50,12 +50,12 @@ struct HabitRowView: View {
     private var subtitle: String {
         switch habit.type {
         case .instant:
-            "One-off"
+            "Разовая"
         case .conditional:
             if let requiredDays = habit.requiredDays {
-                "Day \(habit.currentStreak ?? 0) of \(requiredDays)"
+                "День \(habit.currentStreak ?? 0) из \(requiredDays)"
             } else {
-                "Streak"
+                "Челлендж"
             }
         case .recurring:
             scheduleDescription
@@ -64,9 +64,9 @@ struct HabitRowView: View {
 
     private var scheduleDescription: String {
         guard habit.scheduleType == .daysOfWeek, !habit.scheduleDays.isEmpty else {
-            return "Every day"
+            return "Каждый день"
         }
-        let symbols = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+        let symbols = ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"]
         return habit.scheduleDays.sorted().compactMap { symbols[safe: $0] }.joined(separator: ", ")
     }
 }

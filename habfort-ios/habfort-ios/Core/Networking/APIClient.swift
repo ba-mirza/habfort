@@ -52,9 +52,31 @@ final class APIClient {
         _ = try await requestData(path: path, method: "DELETE", body: nil)
     }
 
+    // Response shape for complete/log varies (Habit vs. HabitHistory depending
+    // on whether the habit closed out), so these discard the body and let the
+    // caller reload the habits list as the source of truth.
+    func post(_ path: String) async throws {
+        _ = try await requestData(path: path, method: "POST", body: nil)
+    }
+
+    func post<Body: Encodable>(_ path: String, body: Body) async throws {
+        _ = try await requestData(path: path, method: "POST", body: try encoder.encode(body))
+    }
+
     @discardableResult
     private func requestData(path: String, method: String, body: Data?) async throws -> Data {
-        var urlRequest = URLRequest(url: baseURL.appendingPathComponent(path))
+        // `appendingPathComponent` would percent-escape a literal "?", breaking
+        // any query string in `path` — build the URL via URLComponents instead
+        // so callers can pass e.g. "/history?status=COMPLETED" directly.
+        var components = URLComponents(url: baseURL, resolvingAgainstBaseURL: true)!
+        let parts = path.split(separator: "?", maxSplits: 1)
+        components.path += parts[0]
+        components.percentEncodedQuery = parts.count > 1 ? String(parts[1]) : nil
+        guard let url = components.url else {
+            throw APIError(status: 0, message: "Invalid request path")
+        }
+
+        var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
         if let token = authManager.accessToken {

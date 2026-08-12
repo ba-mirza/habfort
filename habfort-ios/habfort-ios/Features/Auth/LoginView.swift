@@ -1,3 +1,4 @@
+import AuthenticationServices
 import SwiftUI
 
 struct LoginView: View {
@@ -16,7 +17,7 @@ struct LoginView: View {
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .autocapitalization(.none)
-                    SecureField("Password", text: $password)
+                    SecureField("Пароль", text: $password)
                         .textContentType(.password)
                 }
 
@@ -25,15 +26,67 @@ struct LoginView: View {
                         .foregroundStyle(.red)
                 }
 
-                Button(isSubmitting ? "Logging in…" : "Log in") {
+                Button {
                     Task { await submit() }
+                } label: {
+                    Group {
+                        if isSubmitting {
+                            ProgressView()
+                        } else {
+                            Text("Войти")
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
                 }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(isSubmitting || email.isEmpty || password.isEmpty)
+                .listRowBackground(Color.clear)
+
+                Section {
+                    HStack {
+                        VStack { Divider() }
+                        Text("или")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        VStack { Divider() }
+                    }
+                    .listRowSeparator(.hidden)
+
+                    SignInWithAppleButton(.signIn) { request in
+                        authManager.prepareAppleSignInRequest(request)
+                    } onCompletion: { result in
+                        Task {
+                            do {
+                                try await authManager.handleAppleSignInResult(result)
+                            } catch {
+                                errorMessage = error.localizedDescription
+                            }
+                        }
+                    }
+                    .signInWithAppleButtonStyle(.black)
+                    .frame(height: 44)
+                    .clipShape(RoundedRectangle(cornerRadius: 10))
+                    .listRowBackground(Color.clear)
+
+                    Button {
+                        Task { await signInWithGoogle() }
+                    } label: {
+                        HStack {
+                            Image(systemName: "globe")
+                            Text("Продолжить с Google")
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.bordered)
+                    .controlSize(.large)
+                    .listRowBackground(Color.clear)
+                }
             }
-            .navigationTitle("Log in")
+            .navigationTitle("Вход")
             .toolbar {
                 ToolbarItem(placement: .bottomBar) {
-                    Button("No account? Sign up") { showSignup = true }
+                    Button("Нет аккаунта? Регистрация") { showSignup = true }
                 }
             }
             .sheet(isPresented: $showSignup) {
@@ -48,6 +101,15 @@ struct LoginView: View {
         defer { isSubmitting = false }
         do {
             try await authManager.signIn(email: email, password: password)
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+    }
+
+    private func signInWithGoogle() async {
+        errorMessage = nil
+        do {
+            try await authManager.signInWithGoogle()
         } catch {
             errorMessage = error.localizedDescription
         }

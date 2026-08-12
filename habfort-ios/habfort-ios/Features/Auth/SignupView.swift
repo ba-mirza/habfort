@@ -14,9 +14,9 @@ struct SignupView: View {
             Group {
                 if confirmationSent {
                     ContentUnavailableView(
-                        "Check your email",
+                        "Проверьте почту",
                         systemImage: "envelope",
-                        description: Text("We sent a confirmation link — log in once you've confirmed your address.")
+                        description: Text("Мы отправили ссылку для подтверждения — войдите после подтверждения адреса.")
                     )
                 } else {
                     Form {
@@ -25,7 +25,7 @@ struct SignupView: View {
                                 .textContentType(.emailAddress)
                                 .keyboardType(.emailAddress)
                                 .autocapitalization(.none)
-                            SecureField("Password", text: $password)
+                            SecureField("Пароль", text: $password)
                                 .textContentType(.newPassword)
                         }
 
@@ -34,14 +34,26 @@ struct SignupView: View {
                                 .foregroundStyle(.red)
                         }
 
-                        Button(isSubmitting ? "Signing up…" : "Sign up") {
+                        Button {
                             Task { await submit() }
+                        } label: {
+                            Group {
+                                if isSubmitting {
+                                    ProgressView()
+                                } else {
+                                    Text("Зарегистрироваться")
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
                         }
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
                         .disabled(isSubmitting || email.isEmpty || password.count < 6)
+                        .listRowBackground(Color.clear)
                     }
                 }
             }
-            .navigationTitle("Sign up")
+            .navigationTitle("Регистрация")
         }
     }
 
