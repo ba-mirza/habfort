@@ -11,6 +11,10 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Supabase serves runtime traffic through the connection pooler, which can't
+  // run migrations — those need a direct session connection. Locally both point
+  // at the same Docker Postgres.
+  directUrl = env("DIRECT_URL")
 }
 
 // User.id intentionally has no @default — it must equal the Supabase

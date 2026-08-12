@@ -21,14 +21,17 @@ async function bootstrap() {
     origin: configService.getOrThrow<string>('app.corsOrigin'),
   });
 
-  const swaggerConfig = new DocumentBuilder()
-    .setTitle('Habits API')
-    .setDescription('Habit tracker with a token economy')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('docs', app, swaggerDocument);
+  // /docs would otherwise be a public map of the API on the deployed instance.
+  if (!configService.get<boolean>('app.isProduction')) {
+    const swaggerConfig = new DocumentBuilder()
+      .setTitle('Habits API')
+      .setDescription('Habit tracker with a token economy')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('docs', app, swaggerDocument);
+  }
 
   const port = configService.getOrThrow<number>('app.port');
   await app.listen(port);
