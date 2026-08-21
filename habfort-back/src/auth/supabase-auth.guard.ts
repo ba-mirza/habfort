@@ -9,13 +9,17 @@ import { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { JwksClient } from 'jwks-rsa';
 import { SupabaseJwtPayload } from './jwt-payload.type';
+import { UserProvisioningService } from './user-provisioning.service';
 
 @Injectable()
 export class SupabaseAuthGuard implements CanActivate {
   private readonly jwksClient: JwksClient;
   private readonly audience: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly userProvisioning: UserProvisioningService,
+  ) {
     this.jwksClient = new JwksClient({
       jwksUri: this.configService.getOrThrow<string>('supabase.jwksUri'),
       cache: true,
@@ -33,7 +37,12 @@ export class SupabaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('Missing bearer token');
     }
 
-    request.user = await this.verify(token);
+    const payload = await this.verify(token);
+    // Creates the local row if this account has never been seen here before,
+    // so downstream inserts can rely on the user existing.
+    await this.userProvisioning.ensure(payload);
+
+    request.user = payload;
     return true;
   }
 

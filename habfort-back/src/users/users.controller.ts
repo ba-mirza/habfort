@@ -3,17 +3,17 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { SupabaseAuthGuard } from '../auth/supabase-auth.guard';
 import type { SupabaseJwtPayload } from '../auth/jwt-payload.type';
-import { UsersService } from './users.service';
+import { UserProvisioningService } from '../auth/user-provisioning.service';
 
 @ApiTags('me')
 @ApiBearerAuth()
 @UseGuards(SupabaseAuthGuard)
 @Controller('me')
 export class UsersController {
-  constructor(private readonly usersService: UsersService) {}
+  constructor(private readonly userProvisioning: UserProvisioningService) {}
 
   @Get()
   getCurrentUser(@CurrentUser() jwtUser: SupabaseJwtPayload) {
-    return this.usersService.upsertFromJwt(jwtUser);
+    return this.userProvisioning.sync(jwtUser);
   }
 }
