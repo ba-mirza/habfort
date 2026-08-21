@@ -50,40 +50,98 @@ export class HabitsService {
   }
 
   async findAll(userId: string) {
-    await this.reconcileConditionalGaps(userId);
     const habits = await this.prisma.habit.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
     });
 
+    // One query for every log these habits could need, instead of one per
+    // habit: both the "completed today" flag and the streaks (including the
+    // ones the gap reconciliation needs) are derived from the same rows.
+    const trackedHabits = habits.filter(
+      (habit) => habit.type !== HabitType.INSTANT,
+    );
+    const completedDatesByHabit = await this.loadCompletedDates(trackedHabits);
+
+    const todayDate = today();
+    const closedIds = await this.reconcileConditionalGaps(
+      trackedHabits,
+      completedDatesByHabit,
+      todayDate,
+    );
+
     // currentStreak/isCompletedToday are read-time-only fields for the
     // frontend (progress display, today's hold-to-confirm rest state) —
     // neither is persisted, both are derived from HabitLog on every read.
-    const todayDate = today();
-    return Promise.all(
-      habits.map(async (habit) => {
+    return habits
+      .filter((habit) => !closedIds.has(habit.id))
+      .map((habit) => {
         if (habit.type === HabitType.INSTANT) {
           return habit;
         }
 
-        const todayLog = await this.prisma.habitLog.findUnique({
-          where: { habitId_date: { habitId: habit.id, date: todayDate } },
-        });
-        const isCompletedToday = todayLog?.completed ?? false;
+        const completedDates =
+          completedDatesByHabit.get(habit.id) ?? new Set<string>();
+        const isCompletedToday = completedDates.has(toDateKey(todayDate));
 
         if (habit.type === HabitType.CONDITIONAL) {
-          const startDate = normalizeDate(habit.createdAt);
-          const currentStreak = await this.computeConsecutiveStreak(
-            habit.id,
-            startDate,
+          const currentStreak = this.streakFrom(
+            completedDates,
+            normalizeDate(habit.createdAt),
             todayDate,
           );
           return { ...habit, currentStreak, isCompletedToday };
         }
 
         return { ...habit, isCompletedToday };
-      }),
-    );
+      });
+  }
+
+  // Completed-day keys per habit, from the oldest habit's start date onwards.
+  private async loadCompletedDates(
+    habits: Habit[],
+  ): Promise<Map<string, Set<string>>> {
+    const byHabit = new Map<string, Set<string>>();
+    if (habits.length === 0) {
+      return byHabit;
+    }
+
+    const earliestStart = habits
+      .map((habit) => normalizeDate(habit.createdAt))
+      .reduce((earliest, date) => (date < earliest ? date : earliest));
+
+    const logs = await this.prisma.habitLog.findMany({
+      where: {
+        habitId: { in: habits.map((habit) => habit.id) },
+        completed: true,
+        date: { gte: earliestStart, lte: today() },
+      },
+      select: { habitId: true, date: true },
+    });
+
+    for (const log of logs) {
+      const dates = byHabit.get(log.habitId) ?? new Set<string>();
+      dates.add(toDateKey(log.date));
+      byHabit.set(log.habitId, dates);
+    }
+    return byHabit;
+  }
+
+  private streakFrom(
+    completedDates: Set<string>,
+    startDate: Date,
+    uptoDate: Date,
+  ): number {
+    let streak = 0;
+    let cursor = startDate;
+    while (cursor <= uptoDate) {
+      if (!completedDates.has(toDateKey(cursor))) {
+        break;
+      }
+      streak++;
+      cursor = addDays(cursor, 1);
+    }
+    return streak;
   }
 
   async findOne(userId: string, id: string) {
@@ -238,31 +296,37 @@ export class HabitsService {
   // calendar day has fully passed without a completed log, the streak is
   // broken as of that day regardless of whether the user opened the app.
   // Checked lazily whenever the habit list is read.
-  private async reconcileConditionalGaps(userId: string): Promise<void> {
-    const yesterday = addDays(today(), -1);
-    const activeConditionals = await this.prisma.habit.findMany({
-      where: {
-        userId,
-        type: HabitType.CONDITIONAL,
-        status: HabitStatus.ACTIVE,
-      },
-    });
+  // Closes challenges whose streak already broke, and reports which habits
+  // went away so the caller can drop them from its response. Runs off logs the
+  // caller already loaded, so the common case (nothing broke) costs no queries.
+  private async reconcileConditionalGaps(
+    habits: Habit[],
+    completedDatesByHabit: Map<string, Set<string>>,
+    todayDate: Date,
+  ): Promise<Set<string>> {
+    const closedIds = new Set<string>();
+    const yesterday = addDays(todayDate, -1);
 
-    for (const habit of activeConditionals) {
+    for (const habit of habits) {
+      if (
+        habit.type !== HabitType.CONDITIONAL ||
+        habit.status !== HabitStatus.ACTIVE
+      ) {
+        continue;
+      }
+
       const startDate = normalizeDate(habit.createdAt);
       if (yesterday < startDate) {
         continue; // created today (or later) — nothing to check yet
       }
 
-      const requiredDays = habit.requiredDays!;
-      const streak = await this.computeConsecutiveStreak(
-        habit.id,
-        startDate,
-        yesterday,
-      );
+      const completedDates =
+        completedDatesByHabit.get(habit.id) ?? new Set<string>();
+      const streak = this.streakFrom(completedDates, startDate, yesterday);
       const daysSinceStart = diffDays(startDate, yesterday) + 1;
 
       if (streak < daysSinceStart) {
+        const requiredDays = habit.requiredDays!;
         const coins = Math.round(
           (this.coinsFor(habit.difficulty) * streak) / requiredDays,
         );
@@ -273,10 +337,15 @@ export class HabitsService {
           streak,
           requiredDays,
         );
+        closedIds.add(habit.id);
       }
     }
+
+    return closedIds;
   }
 
+  // Single-habit variant used on the write path, where the caller has no
+  // preloaded logs to share.
   private async computeConsecutiveStreak(
     habitId: string,
     startDate: Date,
@@ -290,18 +359,11 @@ export class HabitsService {
       },
       select: { date: true },
     });
-    const completedDates = new Set(logs.map((log) => toDateKey(log.date)));
-
-    let streak = 0;
-    let cursor = startDate;
-    while (cursor <= uptoDate) {
-      if (!completedDates.has(toDateKey(cursor))) {
-        break;
-      }
-      streak++;
-      cursor = addDays(cursor, 1);
-    }
-    return streak;
+    return this.streakFrom(
+      new Set(logs.map((log) => toDateKey(log.date))),
+      startDate,
+      uptoDate,
+    );
   }
 
   private async closeHabit(

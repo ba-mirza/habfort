@@ -5,12 +5,7 @@ import {
   Prisma,
   RecurringScheduleType,
 } from '../../generated/prisma';
-import {
-  addDays,
-  normalizeDate,
-  today,
-  toDateKey,
-} from '../habits/date.util';
+import { addDays, normalizeDate, today, toDateKey } from '../habits/date.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateRangeQueryDto } from './dto/date-range-query.dto';
 import { ListHistoryQueryDto } from './dto/list-history-query.dto';
