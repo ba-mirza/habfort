@@ -153,4 +153,41 @@ describe('Habits full flow (e2e)', () => {
     );
     expect(completed).toMatchObject({ count: 6, coinsAwarded: 105 });
   });
+  it('records each recurring completion in history and keeps it after delete', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/habits')
+      .send({
+        name: 'Run 1km',
+        type: 'RECURRING',
+        difficulty: 'MEDIUM',
+        scheduleType: 'DAILY',
+      })
+      .expect(201);
+    const habitId: string = created.body.id;
+    const log = (completed: boolean) =>
+      request(app.getHttpServer())
+        .post(`/habits/${habitId}/log`)
+        .send({ completed })
+        .expect(201);
+    const recurringHistory = async () => {
+      const res = await request(app.getHttpServer())
+        .get('/history?type=RECURRING')
+        .expect(200);
+      return res.body as { habitId: string | null; coinsAwarded: number }[];
+    };
+
+    await log(true);
+    expect(await recurringHistory()).toMatchObject([
+      { habitId, coinsAwarded: 10 },
+    ]);
+
+    await log(false);
+    expect(await recurringHistory()).toHaveLength(0);
+
+    await log(true);
+    await request(app.getHttpServer()).delete(`/habits/${habitId}`).expect(204);
+    expect(await recurringHistory()).toMatchObject([
+      { habitId: null, coinsAwarded: 10 },
+    ]);
+  });
 });

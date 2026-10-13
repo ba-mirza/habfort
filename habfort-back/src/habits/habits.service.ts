@@ -263,8 +263,25 @@ export class HabitsService {
         create: { habitId: habit.id, date, completed },
       });
 
+      // Each completed occurrence gets its own history snapshot, so analytics
+      // see every day (not just closed habits) and keep it after the habit
+      // and its logs are deleted. Keyed by habitId + startedAt = log date.
       const coins = this.coinsFor(habit.difficulty);
       if (completed) {
+        await tx.habitHistory.create({
+          data: {
+            userId: habit.userId,
+            habitId: habit.id,
+            habitName: habit.name,
+            habitType: habit.type,
+            status: HabitHistoryStatus.COMPLETED,
+            coinsAwarded: coins,
+            startedAt: date,
+            // Today's completion keeps the real timestamp; a past day's lands
+            // on that day so per-day grouping stays correct.
+            endedAt: date < today() ? date : undefined,
+          },
+        });
         await this.walletService.credit(
           habit.userId,
           coins,
@@ -273,6 +290,9 @@ export class HabitsService {
           tx,
         );
       } else {
+        await tx.habitHistory.deleteMany({
+          where: { habitId: habit.id, startedAt: date },
+        });
         await this.walletService.debit(
           habit.userId,
           coins,
