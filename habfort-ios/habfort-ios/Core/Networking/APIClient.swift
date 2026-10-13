@@ -48,6 +48,10 @@ final class APIClient {
         return try decoder.decode(T.self, from: data)
     }
 
+    func put(_ path: String) async throws {
+        _ = try await requestData(path: path, method: "PUT", body: nil)
+    }
+
     func delete(_ path: String) async throws {
         _ = try await requestData(path: path, method: "DELETE", body: nil)
     }

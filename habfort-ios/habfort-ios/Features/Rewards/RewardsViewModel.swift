@@ -83,6 +83,22 @@ final class RewardsViewModel {
         }
     }
 
+    /// Starring a reward makes it the goal shown in the Habits header; the
+    /// backend unstars any other. Tapping the current goal unstars it.
+    func toggleGoal(_ reward: Reward, apiClient: APIClient) async {
+        actionErrorMessage = nil
+        do {
+            if reward.isGoal == true {
+                try await apiClient.delete("/rewards/\(reward.id)/goal")
+            } else {
+                try await apiClient.put("/rewards/\(reward.id)/goal")
+            }
+            rewards = try await apiClient.get("/rewards")
+        } catch {
+            actionErrorMessage = error.localizedDescription
+        }
+    }
+
     func restore(_ reward: Reward, apiClient: APIClient) async {
         actionErrorMessage = nil
         do {

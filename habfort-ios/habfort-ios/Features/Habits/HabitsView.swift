@@ -17,7 +17,7 @@ struct HabitsView: View {
                 title: isTodaySelected ? "Мои привычки" : ISO8601.sectionTitle(for: selectedDay),
                 onRefresh: { await viewModel.load(apiClient: apiClient) }
             ) {
-                ProfileWidgetView(walletBalance: viewModel.walletBalance)
+                ProfileWidgetView(walletBalance: viewModel.walletBalance, goal: viewModel.goal)
             } rows: {
                 // A plain List pins section headers, so the strip stays on top
                 // of the list while it scrolls.

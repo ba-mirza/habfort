@@ -134,6 +134,9 @@ model Reward {
   user       User      @relation(fields: [userId], references: [id])
   name       String
   costCoins  Int
+  // The reward the user starred as their main goal — at most one active one
+  // per user (enforced in RewardsService). None starred = cheapest is shown.
+  isGoal     Boolean   @default(false)
   archivedAt DateTime?
   createdAt  DateTime  @default(now())
 

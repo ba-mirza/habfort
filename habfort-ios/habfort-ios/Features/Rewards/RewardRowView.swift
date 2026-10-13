@@ -15,8 +15,16 @@ struct RewardRowView: View {
                 .background(Color.accentColor.opacity(0.15), in: Circle())
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(reward.name)
-                    .font(.body)
+                HStack(spacing: 4) {
+                    Text(reward.name)
+                        .font(.body)
+                    if reward.isGoal == true {
+                        Image(systemName: "star.fill")
+                            .font(.caption)
+                            .foregroundStyle(.yellow)
+                            .accessibilityLabel("Главная цель")
+                    }
+                }
 
                 HStack(spacing: 4) {
                     Image(systemName: "seal.fill")

@@ -42,7 +42,29 @@ export class RewardsService {
     }
     return this.prisma.reward.update({
       where: { id },
-      data: { archivedAt: new Date() },
+      data: { archivedAt: new Date(), isGoal: false },
+    });
+  }
+
+  async setGoal(userId: string, id: string) {
+    const reward = await this.getOwnedReward(userId, id);
+    if (reward.archivedAt) {
+      throw new BadRequestException('An archived reward cannot be the goal');
+    }
+    return this.prisma.$transaction(async (tx) => {
+      await tx.reward.updateMany({
+        where: { userId, isGoal: true, id: { not: id } },
+        data: { isGoal: false },
+      });
+      return tx.reward.update({ where: { id }, data: { isGoal: true } });
+    });
+  }
+
+  async clearGoal(userId: string, id: string) {
+    await this.getOwnedReward(userId, id);
+    return this.prisma.reward.update({
+      where: { id },
+      data: { isGoal: false },
     });
   }
 

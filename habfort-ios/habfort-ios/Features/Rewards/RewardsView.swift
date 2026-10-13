@@ -107,6 +107,15 @@ struct RewardsView: View {
                     missingCoins: viewModel.missingCoins(for: reward),
                     onRedeem: { rewardPendingRedeem = reward }
                 )
+                .swipeActions(edge: .leading) {
+                    Button {
+                        Task { await viewModel.toggleGoal(reward, apiClient: apiClient) }
+                    } label: {
+                        Label(reward.isGoal == true ? "Убрать цель" : "Сделать целью",
+                              systemImage: reward.isGoal == true ? "star.slash" : "star.fill")
+                    }
+                    .tint(.yellow)
+                }
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
                         Task { await viewModel.archive(reward, apiClient: apiClient) }

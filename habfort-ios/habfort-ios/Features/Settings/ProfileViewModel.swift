@@ -26,9 +26,9 @@ final class ProfileViewModel {
         !todaysHabits.isEmpty && todaysHabits.allSatisfy { $0.isCompletedToday == true }
     }
 
-    /// The cheapest active reward is the one the balance is working towards.
+    /// Same goal as the Habits header: the starred reward, else the cheapest.
     var nextReward: Reward? {
-        rewards.min { $0.costCoins < $1.costCoins }
+        rewards.goal
     }
 
     var rewardProgress: Double? {

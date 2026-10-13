@@ -5,6 +5,7 @@ import SwiftUI
 final class HabitsViewModel {
     private(set) var habits: [Habit] = []
     private(set) var walletBalance: Int = 0
+    private(set) var goal: Reward?
     /// This week's closed entries, for the day strip's past days.
     private(set) var weekHistory: [HabitHistoryEntry] = []
     private(set) var isLoading = false
@@ -23,7 +24,9 @@ final class HabitsViewModel {
             async let habitsTask: [Habit] = apiClient.get("/habits")
             async let balanceTask: WalletBalance = apiClient.get("/wallet/balance")
             async let weekTask: [HabitHistoryEntry] = apiClient.get(Self.weekHistoryPath())
-            let (fetchedHabits, balance, week) = try await (habitsTask, balanceTask, weekTask)
+            async let rewardsTask: [Reward] = apiClient.get("/rewards")
+            let (fetchedHabits, balance, week, rewards) = try await (habitsTask, balanceTask, weekTask, rewardsTask)
+            goal = rewards.goal
             weekHistory = week
             // Animated so a habit that closed out server-side slides away.
             withAnimation { habits = fetchedHabits }

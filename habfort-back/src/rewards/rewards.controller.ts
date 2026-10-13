@@ -1,10 +1,12 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
   Post,
+  Put,
   Query,
   UseGuards,
 } from '@nestjs/common';
@@ -42,6 +44,16 @@ export class RewardsController {
   @Patch(':id')
   archive(@CurrentUser() user: SupabaseJwtPayload, @Param('id') id: string) {
     return this.rewardsService.archive(user.sub, id);
+  }
+
+  @Put(':id/goal')
+  setGoal(@CurrentUser() user: SupabaseJwtPayload, @Param('id') id: string) {
+    return this.rewardsService.setGoal(user.sub, id);
+  }
+
+  @Delete(':id/goal')
+  clearGoal(@CurrentUser() user: SupabaseJwtPayload, @Param('id') id: string) {
+    return this.rewardsService.clearGoal(user.sub, id);
   }
 
   @Patch(':id/restore')

@@ -327,4 +327,35 @@ describe('Habits full flow (e2e)', () => {
       .delete(`/habits/${created.body.id}`)
       .expect(204);
   });
+  it('keeps at most one goal reward and drops it on archive', async () => {
+    const create = async (name: string) =>
+      (
+        await request(app.getHttpServer())
+          .post('/rewards')
+          .send({ name, costCoins: 150 })
+          .expect(201)
+      ).body.id as string;
+    const first = await create('Concert');
+    const second = await create('Sneakers');
+    const goals = async () =>
+      (await request(app.getHttpServer()).get('/rewards').expect(200)).body
+        .filter((r: { isGoal: boolean }) => r.isGoal)
+        .map((r: { id: string }) => r.id);
+
+    await request(app.getHttpServer())
+      .put(`/rewards/${first}/goal`)
+      .expect(200);
+    expect(await goals()).toEqual([first]);
+
+    await request(app.getHttpServer())
+      .put(`/rewards/${second}/goal`)
+      .expect(200);
+    expect(await goals()).toEqual([second]);
+
+    await request(app.getHttpServer()).patch(`/rewards/${second}`).expect(200);
+    expect(await goals()).toEqual([]);
+    await request(app.getHttpServer())
+      .put(`/rewards/${second}/goal`)
+      .expect(400);
+  });
 });
