@@ -1,4 +1,4 @@
-import Foundation
+import SwiftUI
 
 @MainActor
 @Observable
@@ -53,11 +53,15 @@ final class HabitsViewModel {
     }
 
     func delete(_ habit: Habit, apiClient: APIClient) async {
+        // Optimistic: the row disappears with the swipe, the request runs
+        // behind it, and only a failure puts the habit back where it was.
+        guard let index = habits.firstIndex(where: { $0.id == habit.id }) else { return }
         errorMessage = nil
+        _ = withAnimation { habits.remove(at: index) }
         do {
             try await apiClient.delete("/habits/\(habit.id)")
-            habits.removeAll { $0.id == habit.id }
         } catch {
+            withAnimation { habits.insert(habit, at: min(index, habits.count)) }
             errorMessage = error.localizedDescription
         }
     }

@@ -39,7 +39,9 @@ struct HabitsView: View {
                     // A plain List draws a separator above its first row too,
                     // which reads as a stray border under the title.
                     .listRowSeparator(habit.id == viewModel.todaysHabits.first?.id ? .hidden : .visible, edges: .top)
-                    .swipeActions(edge: .leading) {
+                    // No full swipe: completing takes a swipe plus a tap on the button,
+                    // so one long accidental swipe can't award coins.
+                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
                         Button {
                             Task { await toggleCompletion(habit) }
                         } label: {
