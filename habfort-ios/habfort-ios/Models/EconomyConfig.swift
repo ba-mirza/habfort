@@ -11,6 +11,8 @@ nonisolated struct EconomyConfig: Decodable {
     /// Keyed by `HabitDifficulty.rawValue` ("EASY", "MEDIUM", "HARD").
     let difficultyCoins: [String: Int]
     let fullDayBonus: FullDayBonus
+    /// One-time grant at the end of onboarding.
+    let welcomeBonus: Int
     let rewardMinCostCoins: Int
 
     func coins(for difficulty: HabitDifficulty) -> Int? {

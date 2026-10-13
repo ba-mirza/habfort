@@ -7,6 +7,8 @@ struct MainTabView: View {
 
     @State private var selectedTab: AppTab = .habits
     @State private var habitsViewModel = HabitsViewModel()
+    @State private var showOnboarding = false
+    @Environment(APIClient.self) private var apiClient
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -25,6 +27,19 @@ struct MainTabView: View {
             CreateHabitView(habitsViewModel: habitsViewModel, selectedTab: $selectedTab)
                 .tabItem { Label("Создать", systemImage: "plus.circle") }
                 .tag(AppTab.create)
+        }
+        .task {
+            // Only a confirmed "not onboarded" opens the flow — a failed
+            // request must not push existing users through it again.
+            if let me: Me = try? await apiClient.get("/me"), me.onboardedAt == nil {
+                showOnboarding = true
+            }
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView {
+                showOnboarding = false
+                Task { await habitsViewModel.load(apiClient: apiClient) }
+            }
         }
     }
 }

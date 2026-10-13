@@ -358,4 +358,19 @@ describe('Habits full flow (e2e)', () => {
       .put(`/rewards/${second}/goal`)
       .expect(400);
   });
+  it('credits the welcome bonus exactly once when onboarding completes', async () => {
+    const balance = async () =>
+      (await request(app.getHttpServer()).get('/wallet/balance').expect(200))
+        .body.balance as number;
+    const me = await request(app.getHttpServer()).get('/me').expect(200);
+    expect(me.body.onboardedAt).toBeNull();
+
+    const before = await balance();
+    const first = await request(app.getHttpServer())
+      .post('/me/onboarding')
+      .expect(201);
+    expect(first.body.onboardedAt).not.toBeNull();
+    await request(app.getHttpServer()).post('/me/onboarding').expect(201);
+    expect((await balance()) - before).toBe(60);
+  });
 });

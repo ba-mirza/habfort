@@ -27,6 +27,8 @@ final class RewardsViewModel {
     /// Redeem/archive failures surface as an alert instead of a line at the
     /// bottom of the list, where they were easy to miss.
     var actionErrorMessage: String?
+    /// Set after a successful redeem; drives the full-screen celebration.
+    var celebration: RedeemCelebration?
 
     var spentTotal: Int {
         redeems.reduce(0) { $0 + $1.amountSpent }
@@ -67,6 +69,7 @@ final class RewardsViewModel {
         do {
             let _: Redeem = try await apiClient.post("/redeems", body: CreateRedeemRequest(rewardId: reward.id))
             await load(apiClient: apiClient)
+            celebration = RedeemCelebration(rewardName: reward.name, isFirst: redeems.count == 1)
         } catch {
             actionErrorMessage = error.localizedDescription
         }

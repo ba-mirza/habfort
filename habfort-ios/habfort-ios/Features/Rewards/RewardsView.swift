@@ -64,6 +64,11 @@ struct RewardsView: View {
             } message: {
                 Text(viewModel.actionErrorMessage ?? "")
             }
+            .fullScreenCover(item: $viewModel.celebration) { celebration in
+                RedeemCelebrationView(celebration: celebration) {
+                    viewModel.celebration = nil
+                }
+            }
             .task { await viewModel.load(apiClient: apiClient) }
         }
     }

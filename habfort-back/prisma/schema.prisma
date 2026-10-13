@@ -22,8 +22,11 @@ datasource db {
 // to rows without a second identity system.
 model User {
   id        String   @id
-  email     String?  @unique
-  createdAt DateTime @default(now())
+  email       String?   @unique
+  createdAt   DateTime  @default(now())
+  // Set once the first-run onboarding is finished; that same step credits the
+  // one-time welcome bonus, so null also means "bonus not granted yet".
+  onboardedAt DateTime?
 
   walletTransactions WalletTransaction[]
   habits             Habit[]
@@ -161,6 +164,7 @@ enum WalletSourceType {
   HABIT_COMPLETION
   FULL_BONUS
   REDEEM
+  WELCOME_BONUS
 }
 
 model WalletTransaction {

@@ -35,6 +35,9 @@ export class EconomyController {
         weekday: number;
         weekend: number;
       }>('habits.fullDayBonus'),
+      welcomeBonus: this.configService.getOrThrow<number>(
+        'habits.welcomeBonus',
+      ),
       rewardMinCostCoins: this.configService.getOrThrow<number>(
         'rewards.minCostCoins',
       ),
