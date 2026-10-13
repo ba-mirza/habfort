@@ -190,4 +190,77 @@ describe('Habits full flow (e2e)', () => {
       { habitId: null, coinsAwarded: 10 },
     ]);
   });
+  it('edits a recurring habit for the future only and rejects locked fields', async () => {
+    const created = await request(app.getHttpServer())
+      .post('/habits')
+      .send({
+        name: 'Stretch',
+        type: 'RECURRING',
+        difficulty: 'EASY',
+        scheduleType: 'DAILY',
+      })
+      .expect(201);
+    const habitId: string = created.body.id;
+    const balance = async () =>
+      (await request(app.getHttpServer()).get('/wallet/balance').expect(200))
+        .body.balance as number;
+
+    const before = await balance();
+    await request(app.getHttpServer())
+      .post(`/habits/${habitId}/log`)
+      .send({ completed: true })
+      .expect(201);
+
+    const edited = await request(app.getHttpServer())
+      .patch(`/habits/${habitId}`)
+      .send({
+        name: 'Stretch 10 min',
+        difficulty: 'HARD',
+        scheduleType: 'DAYS_OF_WEEK',
+        scheduleDays: [5, 1, 1],
+      })
+      .expect(200);
+    expect(edited.body).toMatchObject({
+      name: 'Stretch 10 min',
+      difficulty: 'HARD',
+      scheduleDays: [1, 5],
+    });
+
+    // Unchecking today reverses the 5 actually earned, not the new 20. The
+    // edited schedule may exclude today, so restore DAILY before unchecking.
+    await request(app.getHttpServer())
+      .patch(`/habits/${habitId}`)
+      .send({ scheduleType: 'DAILY' })
+      .expect(200);
+    const afterCredit = await balance();
+    await request(app.getHttpServer())
+      .post(`/habits/${habitId}/log`)
+      .send({ completed: false })
+      .expect(201);
+    expect(afterCredit - (await balance())).toBe(5);
+    expect(afterCredit).toBeGreaterThanOrEqual(before + 5);
+
+    await request(app.getHttpServer())
+      .post(`/habits/${habitId}/log`)
+      .send({ completed: true, date: '2020-01-01' })
+      .expect(400);
+
+    const challenge = await request(app.getHttpServer())
+      .post('/habits')
+      .send({
+        name: 'No sugar',
+        type: 'CONDITIONAL',
+        difficulty: 'EASY',
+        requiredDays: 7,
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .patch(`/habits/${challenge.body.id}`)
+      .send({ difficulty: 'HARD' })
+      .expect(400);
+    await request(app.getHttpServer())
+      .patch(`/habits/${challenge.body.id}`)
+      .send({ scheduleType: 'DAILY' })
+      .expect(400);
+  });
 });

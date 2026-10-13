@@ -149,10 +149,46 @@ export class HabitsService {
   }
 
   async update(userId: string, id: string, dto: UpdateHabitDto) {
-    await this.getOwnedHabit(userId, id);
+    const habit = await this.getOwnedHabit(userId, id);
+
+    // A challenge pays out once at the end for the whole streak, so raising
+    // its difficulty mid-way would re-price days already done.
+    if (dto.difficulty && habit.type === HabitType.CONDITIONAL) {
+      throw new BadRequestException(
+        'Difficulty of a conditional habit cannot be changed',
+      );
+    }
+
+    const scheduleEdited =
+      dto.scheduleType !== undefined || dto.scheduleDays !== undefined;
+    if (scheduleEdited && habit.type !== HabitType.RECURRING) {
+      throw new BadRequestException('Only recurring habits have a schedule');
+    }
+    const scheduleType = dto.scheduleType ?? habit.scheduleType;
+    const scheduleDays =
+      scheduleType === RecurringScheduleType.DAILY
+        ? []
+        : (dto.scheduleDays ?? habit.scheduleDays);
+    if (
+      scheduleEdited &&
+      scheduleType === RecurringScheduleType.DAYS_OF_WEEK &&
+      scheduleDays.length === 0
+    ) {
+      throw new BadRequestException(
+        'scheduleDays is required for DAYS_OF_WEEK',
+      );
+    }
+
     return this.prisma.habit.update({
       where: { id },
-      data: { name: dto.name },
+      data: {
+        name: dto.name,
+        difficulty: dto.difficulty,
+        ...(scheduleEdited && {
+          scheduleType,
+          scheduleDays: [...new Set(scheduleDays)].sort((a, b) => a - b),
+        }),
+      },
     });
   }
 
@@ -194,7 +230,7 @@ export class HabitsService {
     dateInput: string | undefined,
     completed: boolean,
   ) {
-    const date = this.resolveLogDate(habit, dateInput);
+    const date = this.resolveLogDate(dateInput);
 
     await this.prisma.habitLog.upsert({
       where: { habitId_date: { habitId: habit.id, date } },
@@ -246,7 +282,7 @@ export class HabitsService {
     dateInput: string | undefined,
     completed: boolean,
   ) {
-    const date = this.resolveLogDate(habit, dateInput);
+    const date = this.resolveLogDate(dateInput);
     this.assertScheduledOn(habit, date);
     const existing = await this.prisma.habitLog.findUnique({
       where: { habitId_date: { habitId: habit.id, date } },
@@ -277,9 +313,6 @@ export class HabitsService {
             status: HabitHistoryStatus.COMPLETED,
             coinsAwarded: coins,
             startedAt: date,
-            // Today's completion keeps the real timestamp; a past day's lands
-            // on that day so per-day grouping stays correct.
-            endedAt: date < today() ? date : undefined,
           },
         });
         await this.walletService.credit(
@@ -293,9 +326,18 @@ export class HabitsService {
         await tx.habitHistory.deleteMany({
           where: { habitId: habit.id, startedAt: date },
         });
+        // Reverse what this day actually earned, not the current preset —
+        // difficulty may have been edited since the completion.
+        const credited = await tx.walletTransaction.aggregate({
+          where: {
+            sourceType: WalletSourceType.HABIT_COMPLETION,
+            sourceId: log.id,
+          },
+          _sum: { amount: true },
+        });
         await this.walletService.debit(
           habit.userId,
-          coins,
+          credited._sum.amount ?? 0,
           WalletSourceType.HABIT_COMPLETION,
           log.id,
           tx,
@@ -425,14 +467,12 @@ export class HabitsService {
     });
   }
 
-  private resolveLogDate(habit: Habit, dateInput: string | undefined): Date {
+  // Only today can be logged: past days are view-only (ticking off a whole
+  // week on Sunday would defeat the point), future days haven't happened.
+  private resolveLogDate(dateInput: string | undefined): Date {
     const date = dateInput ? normalizeDate(dateInput) : today();
-    const startDate = normalizeDate(habit.createdAt);
-    if (date < startDate) {
-      throw new BadRequestException('Date is before the habit was created');
-    }
-    if (date > today()) {
-      throw new BadRequestException('Cannot log a future date');
+    if (date.getTime() !== today().getTime()) {
+      throw new BadRequestException('Only today can be logged');
     }
     return date;
   }
