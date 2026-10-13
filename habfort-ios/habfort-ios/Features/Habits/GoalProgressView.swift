@@ -7,14 +7,12 @@ struct GoalProgressView: View {
     let balance: Int
     let goal: Reward?
 
-    private static let accelerationThreshold = 0.8
-
     private var progress: Double {
         guard let goal, goal.costCoins > 0 else { return 0 }
         return min(1, max(0, Double(balance) / Double(goal.costCoins)))
     }
 
-    private var isAccelerating: Bool { progress >= Self.accelerationThreshold }
+    private var isAccelerating: Bool { progress >= GoalMilestone.almostThereShare }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {

@@ -39,6 +39,19 @@ struct HabitsView: View {
                 }
             }
             .task { await viewModel.load(apiClient: apiClient) }
+            .overlay(alignment: .top) {
+                if let milestone = viewModel.milestone {
+                    GoalMilestoneBanner(milestone: milestone)
+                        .padding(.horizontal, 16)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                        .onTapGesture { viewModel.milestone = nil }
+                        .task(id: milestone.id) {
+                            try? await Task.sleep(for: .seconds(4))
+                            viewModel.milestone = nil
+                        }
+                }
+            }
+            .animation(.spring(response: 0.45, dampingFraction: 0.8), value: viewModel.milestone)
             .sheet(item: $editingHabit) { habit in
                 EditHabitView(habit: habit, habitsViewModel: viewModel)
             }

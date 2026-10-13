@@ -10,6 +10,14 @@ final class HabitsViewModel {
     private(set) var weekHistory: [HabitHistoryEntry] = []
     private(set) var isLoading = false
     var errorMessage: String?
+    /// In-app moment when a completion carries the balance past 80% of the
+    /// goal or to the goal itself.
+    var milestone: GoalMilestone?
+
+    private var goalProgress: Double {
+        guard let goal, goal.costCoins > 0 else { return 0 }
+        return Double(walletBalance) / Double(goal.costCoins)
+    }
 
     // INSTANT/CONDITIONAL have no per-day schedule so they're always "today";
     // RECURRING only counts on its scheduled days.
@@ -31,6 +39,7 @@ final class HabitsViewModel {
             // Animated so a habit that closed out server-side slides away.
             withAnimation { habits = fetchedHabits }
             walletBalance = balance.balance
+            await NotificationScheduler.rescheduleDormantReminder(goal: goal, balance: walletBalance)
         } catch {
             errorMessage = error.localizedDescription
         }
@@ -59,7 +68,16 @@ final class HabitsViewModel {
             } else {
                 try await apiClient.post("/habits/\(habit.id)/log", body: LogHabitDayRequest(completed: completed))
             }
+            let goalBefore = goal?.id
+            let progressBefore = goalProgress
             await load(apiClient: apiClient)
+            if completed {
+                if let goal, goal.id == goalBefore {
+                    milestone = GoalMilestone(crossing: progressBefore, to: goalProgress, goal: goal, balance: walletBalance)
+                        ?? milestone
+                }
+                await NotificationScheduler.requestPermissionAfterFirstCompletion()
+            }
         } catch {
             if let index = habits.firstIndex(where: { $0.id == habit.id }) {
                 habits[index].isCompletedToday = habit.isCompletedToday
@@ -99,5 +117,31 @@ final class HabitsViewModel {
         else { return "/history?take=100" }
         let formatter = ISO8601DateFormatter()
         return "/history?take=100&from=\(formatter.string(from: first))&to=\(formatter.string(from: end))"
+    }
+}
+
+struct GoalMilestone: Identifiable, Equatable {
+    enum Kind { case almostThere, reached }
+
+    let id = UUID()
+    let kind: Kind
+    let goalName: String
+    let coinsLeft: Int
+
+    /// Share of the goal where the header bar "speeds up" and the user hears
+    /// they're nearly there.
+    static let almostThereShare = 0.8
+
+    /// Nil unless this step crossed a threshold — staying above it isn't news.
+    init?(crossing before: Double, to after: Double, goal: Reward, balance: Int) {
+        if before < 1, after >= 1 {
+            kind = .reached
+        } else if before < Self.almostThereShare, after >= Self.almostThereShare, after < 1 {
+            kind = .almostThere
+        } else {
+            return nil
+        }
+        goalName = goal.name
+        coinsLeft = max(0, goal.costCoins - balance)
     }
 }
