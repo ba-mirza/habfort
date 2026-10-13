@@ -1,8 +1,9 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AuthModule } from './auth/auth.module';
+import { TimeZoneMiddleware } from './common/time-zone.middleware';
 import { UserThrottlerGuard } from './common/user-throttler.guard';
 import appConfig from './config/app.config';
 import { validate } from './config/env.validation';
@@ -49,4 +50,8 @@ import { WalletModule } from './wallet/wallet.module';
   ],
   providers: [{ provide: APP_GUARD, useClass: UserThrottlerGuard }],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(TimeZoneMiddleware).forRoutes('*');
+  }
+}

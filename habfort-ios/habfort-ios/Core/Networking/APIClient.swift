@@ -79,6 +79,9 @@ final class APIClient {
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = method
         urlRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        // The backend decides which calendar day it is (completions, streaks,
+        // the FULL bonus) in this zone rather than UTC.
+        urlRequest.setValue(TimeZone.current.identifier, forHTTPHeaderField: "X-Timezone")
         if let token = authManager.accessToken {
             urlRequest.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
         }

@@ -22,6 +22,7 @@ import {
   normalizeDate,
   today,
   toDateKey,
+  localDate,
 } from './date.util';
 import { CreateHabitDto } from './dto/create-habit.dto';
 import { UpdateHabitDto } from './dto/update-habit.dto';
@@ -87,7 +88,7 @@ export class HabitsService {
         if (habit.type === HabitType.CONDITIONAL) {
           const currentStreak = this.streakFrom(
             completedDates,
-            normalizeDate(habit.createdAt),
+            localDate(habit.createdAt),
             todayDate,
           );
           return { ...habit, currentStreak, isCompletedToday };
@@ -107,7 +108,7 @@ export class HabitsService {
     }
 
     const earliestStart = habits
-      .map((habit) => normalizeDate(habit.createdAt))
+      .map((habit) => localDate(habit.createdAt))
       .reduce((earliest, date) => (date < earliest ? date : earliest));
 
     const logs = await this.prisma.habitLog.findMany({
@@ -244,7 +245,7 @@ export class HabitsService {
       return habit;
     }
 
-    const startDate = normalizeDate(habit.createdAt);
+    const startDate = localDate(habit.createdAt);
     const streak = await this.computeConsecutiveStreak(
       habit.id,
       startDate,
@@ -377,7 +378,7 @@ export class HabitsService {
         continue;
       }
 
-      const startDate = normalizeDate(habit.createdAt);
+      const startDate = localDate(habit.createdAt);
       if (yesterday < startDate) {
         continue; // created today (or later) — nothing to check yet
       }

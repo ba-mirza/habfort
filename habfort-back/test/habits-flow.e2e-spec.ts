@@ -282,4 +282,49 @@ describe('Habits full flow (e2e)', () => {
       count: history.body.length,
     });
   });
+  it("buckets days in the caller's time zone, not UTC", async () => {
+    // UTC+14 is already tomorrow from 10:00 UTC on, UTC-12 is still
+    // yesterday until 12:00 UTC — so one of them always differs from UTC.
+    const zone =
+      new Date().getUTCHours() >= 10 ? 'Pacific/Kiritimati' : 'Etc/GMT+12';
+    const zoneToday = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone,
+    }).format(new Date());
+    const created = await request(app.getHttpServer())
+      .post('/habits')
+      .set('X-Timezone', zone)
+      .send({
+        name: 'Read',
+        type: 'RECURRING',
+        difficulty: 'EASY',
+        scheduleType: 'DAILY',
+      })
+      .expect(201);
+    await request(app.getHttpServer())
+      .post(`/habits/${created.body.id}/log`)
+      .set('X-Timezone', zone)
+      .send({ completed: true })
+      .expect(201);
+
+    const habits = await request(app.getHttpServer())
+      .get('/habits')
+      .set('X-Timezone', zone)
+      .expect(200);
+    expect(
+      habits.body.find((h: { id: string }) => h.id === created.body.id),
+    ).toMatchObject({ isCompletedToday: true });
+
+    const activity = await request(app.getHttpServer())
+      .get('/history/activity')
+      .set('X-Timezone', zone)
+      .expect(200);
+    expect(activity.body.to).toBe(zoneToday);
+    expect(
+      activity.body.byDay.find((d: { date: string }) => d.date === zoneToday),
+    ).toBeDefined();
+
+    await request(app.getHttpServer())
+      .delete(`/habits/${created.body.id}`)
+      .expect(204);
+  });
 });

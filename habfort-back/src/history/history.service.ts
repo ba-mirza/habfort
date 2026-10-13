@@ -5,7 +5,14 @@ import {
   Prisma,
   RecurringScheduleType,
 } from '../../generated/prisma';
-import { addDays, normalizeDate, today, toDateKey } from '../habits/date.util';
+import {
+  addDays,
+  normalizeDate,
+  today,
+  toDateKey,
+  localDate,
+  currentTimeZone,
+} from '../habits/date.util';
 import { PrismaService } from '../prisma/prisma.service';
 import { DateRangeQueryDto } from './dto/date-range-query.dto';
 import { ListHistoryQueryDto } from './dto/list-history-query.dto';
@@ -95,15 +102,16 @@ export class HistoryService {
     const start = query.from
       ? normalizeDate(query.from)
       : addDays(end, -(DEFAULT_ACTIVITY_DAYS - 1));
-    const endExclusive = addDays(end, 1);
 
+    // endedAt is stored as UTC; shift it into the user's zone before taking
+    // the day, so a 1 a.m. completion lands on the user's day, not UTC's.
+    const timeZone = currentTimeZone();
     const rows = await this.prisma.$queryRaw<{ day: Date; count: bigint }[]>`
       SELECT day, COUNT(*) AS count FROM (
-        SELECT date_trunc('day', "endedAt")::date AS day
+        SELECT (("endedAt" AT TIME ZONE 'UTC') AT TIME ZONE ${timeZone})::date AS day
         FROM "HabitHistory"
         WHERE "userId" = ${userId}
           AND "status" <> 'NOT_COMPLETED'
-          AND "endedAt" >= ${start} AND "endedAt" < ${endExclusive}
         UNION ALL
         SELECT l."date" AS day
         FROM "HabitLog" l
@@ -111,8 +119,8 @@ export class HistoryService {
         WHERE h."userId" = ${userId}
           AND h."type" = 'CONDITIONAL'
           AND l."completed" = true
-          AND l."date" >= ${start} AND l."date" < ${endExclusive}
       ) completions
+      WHERE day >= ${start} AND day <= ${end}
       GROUP BY day
       ORDER BY day`;
 
@@ -217,7 +225,7 @@ export class HistoryService {
   }
 
   private isScheduledOn(habit: ScheduledHabit, day: Date): boolean {
-    if (day < normalizeDate(habit.createdAt)) {
+    if (day < localDate(habit.createdAt)) {
       return false;
     }
     if (
