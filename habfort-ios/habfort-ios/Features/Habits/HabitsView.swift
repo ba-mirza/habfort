@@ -39,44 +39,24 @@ struct HabitsView: View {
                 .foregroundStyle(.secondary)
         } else {
             ForEach(viewModel.todaysHabits) { habit in
-                Button { editingHabit = habit } label: {
-                    HabitRowView(habit: habit)
-                        .contentShape(Rectangle())
+                HabitRowView(
+                    habit: habit,
+                    isPending: viewModel.pendingIds.contains(habit.id),
+                    onToggle: { Task { await viewModel.toggleCompletion(habit, apiClient: apiClient) } }
+                )
+                .contentShape(Rectangle())
+                .onTapGesture { editingHabit = habit }
+                // A plain List draws a separator above its first row too,
+                // which reads as a stray border under the title.
+                .listRowSeparator(habit.id == viewModel.todaysHabits.first?.id ? .hidden : .visible, edges: .top)
+                .swipeActions(edge: .trailing) {
+                    Button(role: .destructive) {
+                        Task { await viewModel.delete(habit, apiClient: apiClient) }
+                    } label: {
+                        Label("Удалить", systemImage: "trash")
+                    }
                 }
-                .buttonStyle(.plain)
-                    // A plain List draws a separator above its first row too,
-                    // which reads as a stray border under the title.
-                    .listRowSeparator(habit.id == viewModel.todaysHabits.first?.id ? .hidden : .visible, edges: .top)
-                    // No full swipe: completing takes a swipe plus a tap on the button,
-                    // so one long accidental swipe can't award coins.
-                    .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                        Button {
-                            Task { await toggleCompletion(habit) }
-                        } label: {
-                            Label(
-                                habit.isCompletedToday == true ? "Отменить" : "Выполнить",
-                                systemImage: habit.isCompletedToday == true ? "arrow.uturn.left" : "checkmark"
-                            )
-                        }
-                        .tint(habit.isCompletedToday == true ? .gray : .green)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            Task { await viewModel.delete(habit, apiClient: apiClient) }
-                        } label: {
-                            Label("Удалить", systemImage: "trash")
-                        }
-                    }
             }
-        }
-    }
-
-    private func toggleCompletion(_ habit: Habit) async {
-        switch habit.type {
-        case .instant:
-            await viewModel.complete(habit, apiClient: apiClient)
-        case .conditional, .recurring:
-            await viewModel.log(habit, completed: !(habit.isCompletedToday ?? false), apiClient: apiClient)
         }
     }
 }

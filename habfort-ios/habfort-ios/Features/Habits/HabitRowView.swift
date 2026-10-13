@@ -2,19 +2,35 @@ import SwiftUI
 
 struct HabitRowView: View {
     let habit: Habit
+    var isPending = false
+    let onToggle: () -> Void
+
+    private var isDone: Bool { habit.isCompletedToday == true }
 
     var body: some View {
         HStack(spacing: 12) {
-            Image(systemName: typeIcon)
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 30, height: 30)
-                .background(Color.accentColor.opacity(0.15), in: Circle())
+            // Reminders-style checkbox: completing is one deliberate tap.
+            // Borderless so it wins over the row's own tap (which opens edit).
+            Button(action: onToggle) {
+                Image(systemName: isDone ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 26))
+                    .foregroundStyle(isDone ? Color.green : Color.secondary)
+                    .contentTransition(.symbolEffect(.replace))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.borderless)
+            .disabled(isPending)
+            .sensoryFeedback(.success, trigger: isDone) { _, done in done }
+            .accessibilityLabel(isDone ? "Отменить выполнение" : "Выполнить")
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(habit.name)
                     .font(.body)
-                Text(subtitle)
+                    .strikethrough(isDone, color: .secondary)
+                    .foregroundStyle(isDone ? .secondary : .primary)
+                Label(subtitle, systemImage: typeIcon)
+                    .labelStyle(.titleAndIcon)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

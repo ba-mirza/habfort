@@ -21,7 +21,8 @@ final class HabitsViewModel {
             async let habitsTask: [Habit] = apiClient.get("/habits")
             async let balanceTask: WalletBalance = apiClient.get("/wallet/balance")
             let (fetchedHabits, balance) = try await (habitsTask, balanceTask)
-            habits = fetchedHabits
+            // Animated so a habit that closed out server-side slides away.
+            withAnimation { habits = fetchedHabits }
             walletBalance = balance.balance
         } catch {
             errorMessage = error.localizedDescription
@@ -29,25 +30,33 @@ final class HabitsViewModel {
         isLoading = false
     }
 
-    // INSTANT/CONDITIONAL can close out on this call (deleted server-side and
-    // archived to history), so a full reload — not a local mutation — keeps
-    // the list correct.
-    func complete(_ habit: Habit, apiClient: APIClient) async {
-        errorMessage = nil
-        do {
-            try await apiClient.post("/habits/\(habit.id)/complete")
-            await load(apiClient: apiClient)
-        } catch {
-            errorMessage = error.localizedDescription
-        }
-    }
+    private(set) var pendingIds: Set<String> = []
 
-    func log(_ habit: Habit, completed: Bool, apiClient: APIClient) async {
+    /// Checkbox tap. The check appears at once; the request and a reload run
+    /// behind it, since INSTANT/CONDITIONAL can close out server-side (archived
+    /// to history and gone from the list) and the balance changes. A failure
+    /// clears the optimistic check.
+    func toggleCompletion(_ habit: Habit, apiClient: APIClient) async {
+        guard !pendingIds.contains(habit.id),
+              let index = habits.firstIndex(where: { $0.id == habit.id })
+        else { return }
+        let completed = !(habit.isCompletedToday ?? false)
+        pendingIds.insert(habit.id)
+        defer { pendingIds.remove(habit.id) }
         errorMessage = nil
+        habits[index].isCompletedToday = completed
+
         do {
-            try await apiClient.post("/habits/\(habit.id)/log", body: LogHabitDayRequest(completed: completed))
+            if habit.type == .instant {
+                try await apiClient.post("/habits/\(habit.id)/complete")
+            } else {
+                try await apiClient.post("/habits/\(habit.id)/log", body: LogHabitDayRequest(completed: completed))
+            }
             await load(apiClient: apiClient)
         } catch {
+            if let index = habits.firstIndex(where: { $0.id == habit.id }) {
+                habits[index].isCompletedToday = habit.isCompletedToday
+            }
             errorMessage = error.localizedDescription
         }
     }
