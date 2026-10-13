@@ -13,6 +13,9 @@ import { ListHistoryQueryDto } from './dto/list-history-query.dto';
 /** How far back the discipline window reaches when no range is given. */
 const DEFAULT_DISCIPLINE_DAYS = 30;
 
+/** Activity defaults to a year — the widest view the profile heatmap shows. */
+const DEFAULT_ACTIVITY_DAYS = 365;
+
 type ScheduledHabit = {
   id: string;
   type: HabitType;
@@ -82,10 +85,60 @@ export class HistoryService {
   }
 
   /**
+   * Completions per calendar day, for the profile heatmap. A completion is a
+   * history entry (every recurring day, every closed instant/challenge) or a
+   * day already ticked in a challenge that's still running — those only reach
+   * history when the challenge closes. Only days with completions are listed.
+   */
+  async activity(userId: string, query: DateRangeQueryDto) {
+    const end = query.to ? normalizeDate(query.to) : today();
+    const start = query.from
+      ? normalizeDate(query.from)
+      : addDays(end, -(DEFAULT_ACTIVITY_DAYS - 1));
+    const endExclusive = addDays(end, 1);
+
+    const rows = await this.prisma.$queryRaw<{ day: Date; count: bigint }[]>`
+      SELECT day, COUNT(*) AS count FROM (
+        SELECT date_trunc('day', "endedAt")::date AS day
+        FROM "HabitHistory"
+        WHERE "userId" = ${userId}
+          AND "status" <> 'NOT_COMPLETED'
+          AND "endedAt" >= ${start} AND "endedAt" < ${endExclusive}
+        UNION ALL
+        SELECT l."date" AS day
+        FROM "HabitLog" l
+        JOIN "Habit" h ON h."id" = l."habitId"
+        WHERE h."userId" = ${userId}
+          AND h."type" = 'CONDITIONAL'
+          AND l."completed" = true
+          AND l."date" >= ${start} AND l."date" < ${endExclusive}
+      ) completions
+      GROUP BY day
+      ORDER BY day`;
+
+    const byDay = rows.map((row) => ({
+      date: toDateKey(row.day),
+      count: Number(row.count),
+    }));
+    const bestDay = byDay.reduce<(typeof byDay)[number] | null>(
+      (best, day) => (!best || day.count > best.count ? day : best),
+      null,
+    );
+
+    return {
+      from: toDateKey(start),
+      to: toDateKey(end),
+      total: byDay.reduce((sum, day) => sum + day.count, 0),
+      bestDay,
+      byDay,
+    };
+  }
+
+  /**
    * Share of scheduled habit-days that were actually completed.
    *
-   * `habit_history` can't answer this: recurring habits never close, so they
-   * write no history at all, and instant habits only ever close as COMPLETED.
+   * `habit_history` can't answer this: it only records what was done (instant
+   * habits only ever close as COMPLETED, recurring days only when ticked).
    * The daily logs can't answer it alone either — a skipped day writes no row,
    * so counting logs would make every user look perfect. So the denominator is
    * derived from each habit's schedule, and the logs only supply the numerator.

@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(APIClient.self) private var apiClient
     @State private var viewModel = ProfileViewModel()
+    @State private var activityViewModel = ActivityViewModel()
     @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     private var email: String {
@@ -34,19 +35,8 @@ struct SettingsView: View {
                 }
             }
 
-            Section("Ритм за 30 дней") {
-                if let byDay = viewModel.discipline?.byDay, !byDay.isEmpty {
-                    VStack(alignment: .leading, spacing: 8) {
-                        ActivityStrip(days: byDay)
-                        Text("Высота столбика — доля выполненного за день.")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
-                    .padding(.vertical, 4)
-                } else {
-                    Text("Пока нет данных за период.")
-                        .foregroundStyle(.secondary)
-                }
+            Section("Активность") {
+                ActivitySectionView(viewModel: activityViewModel)
             }
 
             Section("Состав привычек") {
@@ -83,7 +73,13 @@ struct SettingsView: View {
         }
         .navigationTitle("Профиль")
         .navigationBarTitleDisplayMode(.inline)
-        .refreshable { await viewModel.load(apiClient: apiClient) }
-        .task { await viewModel.load(apiClient: apiClient) }
+        .refreshable { await load() }
+        .task { await load() }
+    }
+
+    private func load() async {
+        async let profile: Void = viewModel.load(apiClient: apiClient)
+        async let activity: Void = activityViewModel.load(apiClient: apiClient)
+        _ = await (profile, activity)
     }
 }

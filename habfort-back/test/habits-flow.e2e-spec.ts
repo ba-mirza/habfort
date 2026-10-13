@@ -263,4 +263,23 @@ describe('Habits full flow (e2e)', () => {
       .send({ scheduleType: 'DAILY' })
       .expect(400);
   });
+  it('counts completions per day for the activity heatmap', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/history/activity')
+      .expect(200);
+    const todayKey = new Date().toISOString().slice(0, 10);
+    const history = await request(app.getHttpServer())
+      .get('/history?take=100')
+      .expect(200);
+    // Everything in this suite happened today: 6 instant completions plus the
+    // recurring day kept after its habit was deleted.
+    expect(res.body.byDay).toEqual([
+      { date: todayKey, count: history.body.length },
+    ]);
+    expect(res.body.total).toBe(history.body.length);
+    expect(res.body.bestDay).toEqual({
+      date: todayKey,
+      count: history.body.length,
+    });
+  });
 });
