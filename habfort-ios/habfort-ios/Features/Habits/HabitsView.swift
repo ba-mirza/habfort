@@ -4,6 +4,7 @@ struct HabitsView: View {
     let viewModel: HabitsViewModel
 
     @Environment(APIClient.self) private var apiClient
+    @State private var editingHabit: Habit?
 
     var body: some View {
         NavigationStack {
@@ -16,6 +17,9 @@ struct HabitsView: View {
                 listContent
             }
             .task { await viewModel.load(apiClient: apiClient) }
+            .sheet(item: $editingHabit) { habit in
+                EditHabitView(habit: habit, habitsViewModel: viewModel)
+            }
         }
     }
 
@@ -35,7 +39,11 @@ struct HabitsView: View {
                 .foregroundStyle(.secondary)
         } else {
             ForEach(viewModel.todaysHabits) { habit in
-                HabitRowView(habit: habit)
+                Button { editingHabit = habit } label: {
+                    HabitRowView(habit: habit)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
                     // A plain List draws a separator above its first row too,
                     // which reads as a stray border under the title.
                     .listRowSeparator(habit.id == viewModel.todaysHabits.first?.id ? .hidden : .visible, edges: .top)

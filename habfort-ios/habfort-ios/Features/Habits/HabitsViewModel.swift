@@ -65,4 +65,14 @@ final class HabitsViewModel {
             errorMessage = error.localizedDescription
         }
     }
+
+    /// Swaps in an edited habit. PATCH returns the bare row, so the read-time
+    /// fields (streak, today's completion) carry over from the current copy.
+    func replace(_ updated: Habit) {
+        guard let index = habits.firstIndex(where: { $0.id == updated.id }) else { return }
+        var merged = updated
+        merged.currentStreak = habits[index].currentStreak
+        merged.isCompletedToday = habits[index].isCompletedToday
+        habits[index] = merged
+    }
 }
