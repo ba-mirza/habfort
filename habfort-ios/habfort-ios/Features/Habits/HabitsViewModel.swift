@@ -5,6 +5,8 @@ import SwiftUI
 final class HabitsViewModel {
     private(set) var habits: [Habit] = []
     private(set) var walletBalance: Int = 0
+    /// This week's closed entries, for the day strip's past days.
+    private(set) var weekHistory: [HabitHistoryEntry] = []
     private(set) var isLoading = false
     var errorMessage: String?
 
@@ -20,7 +22,9 @@ final class HabitsViewModel {
         do {
             async let habitsTask: [Habit] = apiClient.get("/habits")
             async let balanceTask: WalletBalance = apiClient.get("/wallet/balance")
-            let (fetchedHabits, balance) = try await (habitsTask, balanceTask)
+            async let weekTask: [HabitHistoryEntry] = apiClient.get(Self.weekHistoryPath())
+            let (fetchedHabits, balance, week) = try await (habitsTask, balanceTask, weekTask)
+            weekHistory = week
             // Animated so a habit that closed out server-side slides away.
             withAnimation { habits = fetchedHabits }
             walletBalance = balance.balance
@@ -83,5 +87,14 @@ final class HabitsViewModel {
         merged.currentStreak = habits[index].currentStreak
         merged.isCompletedToday = habits[index].isCompletedToday
         habits[index] = merged
+    }
+
+    private static func weekHistoryPath() -> String {
+        let days = WeekCalendar.days()
+        guard let first = days.first, let last = days.last,
+              let end = WeekCalendar.calendar.date(byAdding: .day, value: 1, to: last)
+        else { return "/history?take=100" }
+        let formatter = ISO8601DateFormatter()
+        return "/history?take=100&from=\(formatter.string(from: first))&to=\(formatter.string(from: end))"
     }
 }
