@@ -1,78 +1,89 @@
 import SwiftUI
 
-/// Placeholder for a future paid tier — layout only, no purchases.
+/// Placeholder for the paid tier — layout only, no purchases. Prices are the
+/// planned ones but nothing is wired to StoreKit yet.
 struct SubscriptionView: View {
-    enum Plan: String, CaseIterable, Identifiable {
-        case monthly, yearly
-        var id: String { rawValue }
-    }
-
     enum Tier: String, CaseIterable, Identifiable {
         case solo, family
         var id: String { rawValue }
         var title: String { self == .solo ? "Solo" : "Family" }
     }
 
-    @State private var plan: Plan = .yearly
-    @State private var tier: Tier = .solo
+    enum Billing { case monthly, yearly }
 
-    // Illustrative prices for the preview.
-    private var prices: (year: String, yearNote: String, month: String) {
+    private struct Pricing {
+        let monthly: Int
+        let yearly: Int
+        var yearlyFull: Int { monthly * 12 }
+        var savingPercent: Int { Int((1 - Double(yearly) / Double(yearlyFull)) * 100) }
+    }
+
+    @State private var tier: Tier = .solo
+    @State private var billing: Billing = .yearly
+
+    private var pricing: Pricing {
         switch tier {
-        case .solo: ("2 990 ₸", "249 ₸ в месяц · выгода 40%", "399 ₸")
-        case .family: ("4 990 ₸", "До 5 человек · 416 ₸ в месяц", "699 ₸")
+        case .solo: Pricing(monthly: 690, yearly: 5_990)
+        case .family: Pricing(monthly: 1_190, yearly: 9_990)
         }
     }
 
-    private let perks: [(icon: String, title: String, detail: String)] = [
-        ("person.3.fill", "Общие лобби", "Привычки и цели вместе с друзьями"),
-        ("snowflake", "Заморозка серии", "Пропусти день и не потеряй стрик"),
-        ("chart.xyaxis.line", "Расширенная статистика", "Тренды по каждой привычке"),
-        ("paintpalette.fill", "Темы и иконки", "Оформи приложение под себя"),
-    ]
+    private var perks: [(icon: String, text: String)] {
+        var perks: [(String, String)] = [
+            ("person.3.fill", "Общие лобби и цели с друзьями"),
+            ("snowflake", "Заморозка серии — пропуск без потери стрика"),
+            ("chart.xyaxis.line", "Расширенная статистика по привычкам"),
+            ("paintpalette.fill", "Темы и иконки приложения"),
+        ]
+        if tier == .family {
+            perks.insert(("figure.2.and.child.holdinghands", "До 5 участников на одной подписке"), at: 0)
+        }
+        return perks
+    }
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 18) {
+            VStack(spacing: 22) {
                 hero
 
                 Picker("Тариф", selection: $tier) {
-                    ForEach(Tier.allCases) { tier in
-                        Text(tier.title).tag(tier)
-                    }
+                    ForEach(Tier.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
 
-                if tier == .family {
-                    Label("Один Pro на семью: до 5 участников, общая семейная лобби и общие цели.", systemImage: "person.3.sequence.fill")
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .transition(.opacity)
+                VStack(spacing: 14) {
+                    planCard(
+                        .monthly,
+                        band: "ЕЖЕМЕСЯЧНО",
+                        price: "\(format(pricing.monthly)) ₸",
+                        period: "/мес",
+                        oldPrice: nil,
+                        note: tier == .solo ? "Можно отменить в любой момент" : "Для всей семьи, отмена в любой момент"
+                    )
+                    planCard(
+                        .yearly,
+                        band: "ЕЖЕГОДНО — ВЫГОДА \(pricing.savingPercent)%",
+                        price: "\(format(pricing.yearly)) ₸",
+                        period: "/год",
+                        oldPrice: "\(format(pricing.yearlyFull)) ₸",
+                        note: "\(format(pricing.yearly / 12)) ₸ в месяц"
+                    )
                 }
 
-                VStack(spacing: 12) {
-                    ForEach(perks, id: \.title) { perk in
-                        HStack(spacing: 14) {
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(perks, id: \.text) { perk in
+                        Label {
+                            Text(perk.text).font(.subheadline)
+                        } icon: {
                             Image(systemName: perk.icon)
-                                .font(.system(size: 15, weight: .semibold))
                                 .foregroundStyle(Color.accentColor)
-                                .frame(width: 38, height: 38)
-                                .card(fill: Color.accentColor.opacity(0.14), radius: 11, bordered: false)
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(perk.title).font(.body.weight(.semibold))
-                                Text(perk.detail).font(.caption).foregroundStyle(.secondary)
-                            }
-                            Spacer()
+                                .frame(width: 26)
                         }
                     }
                 }
+                .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(16)
                 .card()
-
-                VStack(spacing: 10) {
-                    planCard(.yearly, title: "Год", price: prices.year, note: prices.yearNote)
-                    planCard(.monthly, title: "Месяц", price: prices.month, note: "Отмена в любой момент")
-                }
 
                 Button {} label: {
                     Text("Оформить Pro \(tier.title)")
@@ -84,59 +95,142 @@ struct SubscriptionView: View {
 
                 ComingSoonNote()
             }
-            .padding(16)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 24)
+            .animation(.snappy, value: tier)
+            .animation(.snappy, value: billing)
         }
-        .animation(.snappy, value: tier)
+        .background(alignment: .top) {
+            LinearGradient(colors: [Color.accentColor.opacity(0.22), Color(.systemBackground)], startPoint: .top, endPoint: .bottom)
+                .frame(height: 420)
+                .ignoresSafeArea(edges: .top)
+        }
         .background(Color(.systemBackground))
         .navigationTitle("Beles Pro")
         .navigationBarTitleDisplayMode(.inline)
     }
 
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: "crown.fill")
-                .font(.system(size: 30, weight: .semibold))
-                .foregroundStyle(Palette.yellow)
+        VStack(spacing: 10) {
+            ShiningCrown()
+                .frame(height: 150)
             Text("Beles Pro")
                 .font(.system(.largeTitle, design: .rounded, weight: .bold))
-            Text("Больше мотивации, больше способов держать серию.")
+            Text(tier == .solo
+                 ? "Больше мотивации и способов держать серию."
+                 : "Одна подписка на всю семью — привычки и цели вместе.")
                 .font(.subheadline)
-                .foregroundStyle(.white.opacity(0.75))
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .contentTransition(.opacity)
         }
-        .foregroundStyle(.white)
-        .padding(20)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .card(
-            fill: LinearGradient(colors: [Color(red: 0.12, green: 0.12, blue: 0.14), Color(red: 0.25, green: 0.16, blue: 0.10)], startPoint: .topLeading, endPoint: .bottomTrailing),
-            radius: 22,
-            bordered: false
-        )
+        .padding(.top, 8)
     }
 
-    private func planCard(_ value: Plan, title: String, price: String, note: String) -> some View {
-        let isSelected = plan == value
+    /// Plan option in the reference's style: a label band on top, the price
+    /// card inside it; the selected plan's band turns orange.
+    private func planCard(_ value: Billing, band: String, price: String, period: String, oldPrice: String?, note: String) -> some View {
+        let isSelected = billing == value
         return Button {
-            withAnimation(.snappy) { plan = value }
+            billing = value
         } label: {
-            HStack {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                    .font(.title3)
-                    .foregroundStyle(isSelected ? Color.accentColor : .secondary)
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.headline)
-                    Text(note).font(.caption).foregroundStyle(.secondary)
+            VStack(spacing: 0) {
+                Text(band)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(isSelected ? .white : .secondary)
+                    .padding(.vertical, 8)
+                HStack(spacing: 14) {
+                    ZStack {
+                        Circle().stroke(isSelected ? Color.accentColor : Color.secondary.opacity(0.4), lineWidth: 2)
+                        if isSelected {
+                            Circle().fill(Color.accentColor).padding(5)
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 9, weight: .heavy))
+                                .foregroundStyle(.white)
+                        }
+                    }
+                    .frame(width: 26, height: 26)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        HStack(alignment: .firstTextBaseline, spacing: 6) {
+                            if let oldPrice {
+                                Text(oldPrice)
+                                    .strikethrough()
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(price)
+                                .font(.system(.title3, design: .rounded, weight: .bold))
+                            + Text(period)
+                                .font(.subheadline)
+                                .foregroundColor(.secondary)
+                        }
+                        Text(note)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                    }
+                    Spacer()
                 }
-                Spacer()
-                Text(price)
-                    .font(.system(.title3, design: .rounded, weight: .bold))
+                .padding(16)
+                .background(Palette.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding([.horizontal, .bottom], 4)
             }
-            .padding(16)
-            .card()
-            .overlay {
-                RoundedRectangle(cornerRadius: Palette.radius, style: .continuous)
-                    .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 2)
-            }
+            .background(
+                isSelected ? Color.accentColor : Color.secondary.opacity(0.14),
+                in: RoundedRectangle(cornerRadius: 20, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    private func format(_ amount: Int) -> String {
+        amount.formatted(.number.grouping(.automatic).locale(ISO8601.russian))
+    }
+}
+
+/// A big crown in a laurel wreath with a light sweep running across it.
+private struct ShiningCrown: View {
+    @State private var shine: CGFloat = -1
+    @State private var floating = false
+
+    var body: some View {
+        HStack(spacing: -6) {
+            Image(systemName: "laurel.leading")
+            Image(systemName: "crown.fill")
+                .font(.system(size: 76, weight: .semibold))
+                .offset(y: floating ? -4 : 2)
+            Image(systemName: "laurel.trailing")
+        }
+        .font(.system(size: 92, weight: .regular))
+        .foregroundStyle(
+            LinearGradient(colors: [Palette.yellow, .accentColor], startPoint: .top, endPoint: .bottom)
+        )
+        .overlay {
+            GeometryReader { proxy in
+                LinearGradient(colors: [.clear, .white.opacity(0.85), .clear], startPoint: .leading, endPoint: .trailing)
+                    .frame(width: proxy.size.width * 0.35)
+                    .rotationEffect(.degrees(20))
+                    .offset(x: shine * proxy.size.width)
+            }
+            .mask {
+                HStack(spacing: -6) {
+                    Image(systemName: "laurel.leading")
+                    Image(systemName: "crown.fill")
+                        .font(.system(size: 76, weight: .semibold))
+                        .offset(y: floating ? -4 : 2)
+                    Image(systemName: "laurel.trailing")
+                }
+                .font(.system(size: 92, weight: .regular))
+            }
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.6).delay(0.4).repeatForever(autoreverses: false)) {
+                shine = 1.2
+            }
+            withAnimation(.easeInOut(duration: 2).repeatForever(autoreverses: true)) {
+                floating = true
+            }
+        }
+        .accessibilityHidden(true)
     }
 }
