@@ -25,7 +25,7 @@ struct RedeemDiaryEditor: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            AppForm {
                 Section {
                     PhotosPicker(selection: $pickerItem, matching: .images) {
                         photoPreview

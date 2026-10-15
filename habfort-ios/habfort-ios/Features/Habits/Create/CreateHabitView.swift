@@ -9,7 +9,7 @@ struct CreateHabitView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            AppForm {
                 Section("Привычка") {
                     TextField("Название", text: $formViewModel.name)
                 }

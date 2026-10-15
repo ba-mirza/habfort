@@ -9,7 +9,7 @@ struct CreateRewardView: View {
 
     var body: some View {
         NavigationStack {
-            Form {
+            AppForm {
                 Section("Награда") {
                     TextField("Название", text: $formViewModel.name)
                     TextField("Стоимость в жетонах", text: $formViewModel.costCoinsText)
