@@ -1,5 +1,7 @@
 import SwiftUI
 
+/// A finished habit in History: type icon, name, details and what it paid.
+/// Only a partial result gets a badge — "completed" is the normal case.
 struct HistoryEntryRowView: View {
     let entry: HabitHistoryEntry
 
@@ -7,13 +9,13 @@ struct HistoryEntryRowView: View {
         HStack(spacing: 12) {
             Image(systemName: entry.habitType.iconName)
                 .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 30, height: 30)
-                .background(Color.accentColor.opacity(0.15), in: Circle())
+                .foregroundStyle(entry.habitType.tint)
+                .frame(width: 34, height: 34)
+                .card(fill: entry.habitType.tint.opacity(0.14), radius: 10, bordered: false)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.habitName)
-                    .font(.body)
+                    .font(.body.weight(.medium))
                 Text(subtitle)
                     .font(.caption)
                     .foregroundStyle(.secondary)
@@ -22,22 +24,22 @@ struct HistoryEntryRowView: View {
             Spacer()
 
             VStack(alignment: .trailing, spacing: 4) {
-                Text(entry.status.displayName)
-                    .font(.caption2.bold())
-                    .foregroundStyle(entry.status.color)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(entry.status.color.opacity(0.15), in: Capsule())
-
-                HStack(spacing: 4) {
+                HStack(spacing: 3) {
+                    Text("+\(entry.coinsAwarded)")
+                        .font(.subheadline.weight(.semibold))
                     Image(systemName: "seal.fill")
-                    Text("\(entry.coinsAwarded)")
+                        .foregroundStyle(Palette.yellow)
                 }
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                if entry.status != .completed {
+                    Text(entry.status.displayName)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(entry.status.color)
+                }
             }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .card()
     }
 
     private var subtitle: String {

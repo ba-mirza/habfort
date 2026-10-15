@@ -16,7 +16,7 @@ struct HabitsHeaderView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        AccentHeader {
             NavigationLink {
                 SettingsView()
             } label: {
@@ -43,14 +43,6 @@ struct HabitsHeaderView: View {
             .buttonStyle(.plain)
 
             GoalCard(balance: balance, goal: goal)
-        }
-        .padding(.horizontal, 16)
-        .padding(.top, 8)
-        .padding(.bottom, 20)
-        .background {
-            UnevenRoundedRectangle(bottomLeadingRadius: 28, bottomTrailingRadius: 28, style: .continuous)
-                .fill(Color.accentColor)
-                .ignoresSafeArea(edges: .top)
         }
     }
 }

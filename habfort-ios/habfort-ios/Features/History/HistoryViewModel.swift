@@ -20,8 +20,7 @@ final class HistoryViewModel {
     private(set) var canLoadMore = true
     var errorMessage: String?
 
-    var statusFilter: HabitHistoryStatus?
-    var typeFilter: HabitType?
+    var period = HistoryPeriod()
 
     /// Entries arrive newest-first, so grouping preserves that order within
     /// each day and the day keys only need sorting descending.
@@ -36,7 +35,7 @@ final class HistoryViewModel {
         errorMessage = nil
         do {
             async let entriesTask: [HabitHistoryEntry] = apiClient.get(historyPath(skip: 0))
-            async let statsTask: HistoryStats = apiClient.get("/history/stats")
+            async let statsTask: HistoryStats = apiClient.get("/history/stats?\(period.queryItems)")
             let (fetchedEntries, fetchedStats) = try await (entriesTask, statsTask)
             entries = fetchedEntries
             stats = fetchedStats
@@ -70,13 +69,6 @@ final class HistoryViewModel {
     }
 
     private func historyPath(skip: Int) -> String {
-        var items = ["take=\(pageSize)", "skip=\(skip)"]
-        if let statusFilter {
-            items.append("status=\(statusFilter.rawValue)")
-        }
-        if let typeFilter {
-            items.append("type=\(typeFilter.rawValue)")
-        }
-        return "/history?" + items.joined(separator: "&")
+        "/history?take=\(pageSize)&skip=\(skip)&\(period.queryItems)"
     }
 }

@@ -140,14 +140,3 @@ struct HabitsView: View {
         }
     }
 }
-
-private extension View {
-    /// A card sitting in the plain List: no separators, no row background,
-    /// side margins plus room for the card's offset shadow.
-    func cardRow(top: CGFloat = 6) -> some View {
-        self
-            .listRowInsets(EdgeInsets(top: top, leading: 16, bottom: 8, trailing: 16))
-            .listRowSeparator(.hidden)
-            .listRowBackground(Color.clear)
-    }
-}

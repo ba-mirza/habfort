@@ -28,8 +28,8 @@ enum ISO8601 {
         // `.year(.omitted)` is iOS 18+, so the year is left out by simply not
         // adding the field to the format.
         return isCurrentYear(date)
-            ? date.formatted(.dateTime.day().month(.abbreviated))
-            : date.formatted(.dateTime.day().month(.abbreviated).year())
+            ? date.formatted(.dateTime.day().month(.abbreviated).locale(russian))
+            : date.formatted(.dateTime.day().month(.abbreviated).year().locale(russian))
     }
 
     /// "14:32"
@@ -50,9 +50,12 @@ enum ISO8601 {
         if calendar.isDateInYesterday(day) { return "Вчера" }
 
         return isCurrentYear(day)
-            ? day.formatted(.dateTime.day().month(.wide))
-            : day.formatted(.dateTime.day().month(.wide).year())
+            ? day.formatted(.dateTime.day().month(.wide).locale(russian))
+            : day.formatted(.dateTime.day().month(.wide).year().locale(russian))
     }
+
+    /// The UI is Russian-only, so dates are too, whatever the device language.
+    static let russian = Locale(identifier: "ru_RU")
 
     private static func isCurrentYear(_ date: Date) -> Bool {
         let calendar = Calendar.current
