@@ -1,15 +1,19 @@
 import Auth
 import SwiftUI
 
+/// Profile: level and XP, headline stats, achievements, activity heatmap,
+/// then app settings.
 struct SettingsView: View {
     @Environment(AuthManager.self) private var authManager
     @Environment(APIClient.self) private var apiClient
     @State private var viewModel = ProfileViewModel()
     @State private var activityViewModel = ActivityViewModel()
+    @State private var selectedAchievement: String?
     @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
-    private var email: String {
-        authManager.session?.user.email ?? "Аккаунт"
+    private var name: String {
+        let email = authManager.session?.user.email ?? ""
+        return email.split(separator: "@").first.map(String.init) ?? "Аккаунт"
     }
 
     private var theme: Binding<AppTheme> {
@@ -19,37 +23,59 @@ struct SettingsView: View {
         )
     }
 
+    private let tileColumns = Array(repeating: GridItem(.flexible(), spacing: 12), count: 3)
+    private let badgeColumns = Array(repeating: GridItem(.flexible(), spacing: 8), count: 4)
+
     var body: some View {
         List {
-            Section {
-                ProfilePanelView(email: email, viewModel: viewModel)
-            }
-            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
-            .listRowBackground(Color.clear)
-            .listRowSeparator(.hidden)
+            LevelCard(name: name, progress: viewModel.progress)
+                .cardRow(top: 8)
 
             if let errorMessage = viewModel.errorMessage {
-                Section {
-                    Text(errorMessage)
-                        .foregroundStyle(.red)
-                }
+                Text(errorMessage)
+                    .foregroundStyle(.red)
+                    .cardRow()
             }
 
-            Section("Активность") {
+            LazyVGrid(columns: tileColumns, spacing: 12) {
+                StatTile(value: "\(viewModel.streak?.current ?? 0)", label: russianPlural(viewModel.streak?.current ?? 0, one: "день подряд", few: "дня подряд", many: "дней подряд"), icon: "flame.fill", color: Palette.purple)
+                StatTile(value: "\(viewModel.streak?.best ?? 0)", label: "лучшая серия", icon: "crown.fill", color: .accentColor)
+                StatTile(value: rateText, label: "выполнение за 30 дней", icon: "chart.bar.fill", color: Palette.teal)
+                StatTile(value: "\(viewModel.progress?.metrics.completions ?? 0)", label: "выполнено всего", icon: "checkmark.circle.fill", color: Palette.green)
+                StatTile(value: "\(viewModel.progress?.metrics.coinsEarned ?? 0)", label: "жетонов заработано", icon: "seal.fill", color: Color(red: 0.85, green: 0.6, blue: 0.1))
+                StatTile(value: "\(viewModel.progress?.metrics.redeems ?? 0)", label: "наград получено", icon: "gift.fill", color: Palette.red)
+            }
+            .cardRow(top: 10)
+
+            section(title: "Достижения", trailing: achievementsCount) {
+                VStack(spacing: 12) {
+                    LazyVGrid(columns: badgeColumns, spacing: 16) {
+                        ForEach(viewModel.progress?.achievements ?? []) { achievement in
+                            AchievementBadge(achievement: achievement)
+                                .onTapGesture {
+                                    selectedAchievement = selectedAchievement == achievement.id ? nil : achievement.id
+                                }
+                        }
+                    }
+                    if let id = selectedAchievement {
+                        Text(AchievementCatalog.entry(for: id).detail)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .transition(.opacity)
+                    }
+                }
+                .animation(.snappy, value: selectedAchievement)
+                .padding(16)
+                .card()
+            }
+
+            section(title: "Активность") {
                 ActivitySectionView(viewModel: activityViewModel)
+                    .padding(16)
+                    .card()
             }
 
-            Section("Состав привычек") {
-                if viewModel.habitCountsByType.isEmpty {
-                    Text("Активных привычек нет.")
-                        .foregroundStyle(.secondary)
-                } else {
-                    HabitCompositionBar(counts: viewModel.habitCountsByType)
-                        .padding(.vertical, 6)
-                }
-            }
-
-            Section("Тема") {
+            section(title: "Тема") {
                 Picker("Тема", selection: theme) {
                     ForEach(AppTheme.allCases) { theme in
                         Label(theme.displayName, systemImage: theme.iconName).tag(theme)
@@ -58,23 +84,51 @@ struct SettingsView: View {
                 .pickerStyle(.segmented)
             }
 
-            Section {
-                Button(role: .destructive) {
-                    Task { try? await authManager.signOut() }
-                } label: {
-                    Text("Выйти")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
-                .tint(.red)
-                .listRowBackground(Color.clear)
+            Button(role: .destructive) {
+                Task { try? await authManager.signOut() }
+            } label: {
+                Text("Выйти")
+                    .frame(maxWidth: .infinity)
             }
+            .buttonStyle(.borderedProminent)
+            .controlSize(.large)
+            .tint(.red)
+            .cardRow(top: 24)
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .background(Color(.systemBackground))
         .navigationTitle("Профиль")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }
         .task { await load() }
+    }
+
+    private var rateText: String {
+        guard let rate = viewModel.discipline?.rate else { return "—" }
+        return "\(Int((rate * 100).rounded()))%"
+    }
+
+    private var achievementsCount: String? {
+        guard let achievements = viewModel.progress?.achievements else { return nil }
+        return "\(achievements.filter(\.unlocked).count) из \(achievements.count)"
+    }
+
+    private func section(title: String, trailing: String? = nil, @ViewBuilder content: () -> some View) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text(title)
+                    .font(.system(.title3, design: .rounded, weight: .bold))
+                Spacer()
+                if let trailing {
+                    Text(trailing)
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            content()
+        }
+        .cardRow(top: 20)
     }
 
     private func load() async {

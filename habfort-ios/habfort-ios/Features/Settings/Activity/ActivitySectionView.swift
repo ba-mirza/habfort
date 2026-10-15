@@ -27,7 +27,6 @@ struct ActivitySectionView: View {
                 statTile(title: "Всего", value: "\(viewModel.periodTotal)")
             }
         }
-        .padding(.vertical, 6)
         .onChange(of: viewModel.period) {
             Task { await viewModel.loadDiscipline(apiClient: apiClient) }
         }

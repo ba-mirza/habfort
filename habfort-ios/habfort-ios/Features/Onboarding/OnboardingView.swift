@@ -214,10 +214,7 @@ struct OnboardingView: View {
     }
 
     private func dayWord(_ n: Int) -> String {
-        let mod10 = n % 10, mod100 = n % 100
-        if mod10 == 1 && mod100 != 11 { return "день" }
-        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return "дня" }
-        return "дней"
+        russianPlural(n, one: "день", few: "дня", many: "дней")
     }
 }
 

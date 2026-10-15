@@ -8,12 +8,14 @@ import { UserThrottlerGuard } from './common/user-throttler.guard';
 import appConfig from './config/app.config';
 import { validate } from './config/env.validation';
 import habitsConfig from './config/habits.config';
+import progressConfig from './config/progress.config';
 import rewardsConfig from './config/rewards.config';
 import supabaseConfig from './config/supabase.config';
 import { EconomyModule } from './economy/economy.module';
 import { HabitsModule } from './habits/habits.module';
 import { HistoryModule } from './history/history.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProgressModule } from './progress/progress.module';
 import { RedeemsModule } from './redeems/redeems.module';
 import { RewardsModule } from './rewards/rewards.module';
 import { UsersModule } from './users/users.module';
@@ -24,7 +26,13 @@ import { WalletModule } from './wallet/wallet.module';
     ConfigModule.forRoot({
       isGlobal: true,
       validate,
-      load: [appConfig, supabaseConfig, habitsConfig, rewardsConfig],
+      load: [
+        appConfig,
+        supabaseConfig,
+        habitsConfig,
+        rewardsConfig,
+        progressConfig,
+      ],
     }),
     // Two windows: the short one absorbs a stuck refresh loop, the long one
     // caps sustained hammering. Both sit far above normal use — opening a tab
@@ -47,6 +55,7 @@ import { WalletModule } from './wallet/wallet.module';
     RedeemsModule,
     HistoryModule,
     EconomyModule,
+    ProgressModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: UserThrottlerGuard }],
 })

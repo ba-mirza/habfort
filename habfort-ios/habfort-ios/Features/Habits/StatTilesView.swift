@@ -16,11 +16,7 @@ struct StatTilesView: View {
     }
 
     private var streakLabel: String {
-        let n = streak?.current ?? 0
-        let mod10 = n % 10, mod100 = n % 100
-        if mod10 == 1 && mod100 != 11 { return "день подряд" }
-        if (2...4).contains(mod10) && !(12...14).contains(mod100) { return "дня подряд" }
-        return "дней подряд"
+        russianPlural(streak?.current ?? 0, one: "день подряд", few: "дня подряд", many: "дней подряд")
     }
 
     private func tile(value: String, label: String, icon: String, color: Color) -> some View {

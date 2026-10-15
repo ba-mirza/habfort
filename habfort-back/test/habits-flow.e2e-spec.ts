@@ -424,4 +424,23 @@ describe('Habits full flow (e2e)', () => {
     // today, 1 and 2 days ago in a row; 3 days ago is the gap.
     expect(res.body).toEqual({ current: 3, best: 3, completedToday: true });
   });
+  it('derives level and achievements from recorded activity', async () => {
+    const res = await request(app.getHttpServer()).get('/progress').expect(200);
+    const { xp, level, levelXp, levelSpan, metrics, achievements } = res.body;
+
+    expect(xp).toBe(metrics.coinsEarned * 2);
+    // Level n starts at 100 * n(n-1)/2 XP.
+    const startOf = (n: number) => (100 * n * (n - 1)) / 2;
+    expect(xp).toBeGreaterThanOrEqual(startOf(level));
+    expect(xp).toBeLessThan(startOf(level + 1));
+    expect(levelXp).toBe(xp - startOf(level));
+    expect(levelSpan).toBe(100 * level);
+
+    const byId = Object.fromEntries(
+      achievements.map((a: { id: string; unlocked: boolean }) => [a.id, a]),
+    );
+    expect(byId.first_step.unlocked).toBe(true);
+    expect(byId.first_reward.unlocked).toBe(true);
+    expect(byId.month_streak).toMatchObject({ unlocked: false, target: 30 });
+  });
 });

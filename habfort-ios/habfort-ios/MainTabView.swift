@@ -22,6 +22,19 @@ struct MainTabView: View {
     @Environment(APIClient.self) private var apiClient
 
     var body: some View {
+        #if DEBUG
+        // `-initialTab profile` opens the profile screen on its own.
+        if UserDefaults.standard.string(forKey: "initialTab") == "profile" {
+            NavigationStack { SettingsView() }
+        } else {
+            tabs
+        }
+        #else
+        tabs
+        #endif
+    }
+
+    private var tabs: some View {
         TabView(selection: $selectedTab) {
             HabitsView(viewModel: habitsViewModel)
                 .tabItem { Label("Привычки", systemImage: "checklist") }
