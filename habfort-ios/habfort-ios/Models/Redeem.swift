@@ -14,6 +14,10 @@ struct Redeem: Codable, Identifiable, Hashable {
     let reward: RewardRef?
     let amountSpent: Int
     let redeemedAt: String
+    /// Reward diary. `photoUrl` is a short-lived signed link to the private
+    /// photo; optional fields so older API responses still decode.
+    let note: String?
+    let photoUrl: String?
 
     var rewardName: String { reward?.name ?? "Награда" }
 }

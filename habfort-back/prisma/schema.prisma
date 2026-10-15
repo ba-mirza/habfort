@@ -156,6 +156,10 @@ model Redeem {
   reward      Reward   @relation(fields: [rewardId], references: [id])
   amountSpent Int
   redeemedAt  DateTime @default(now())
+  // Reward diary: an optional photo (object path in the private Storage
+  // bucket, `<userId>/<redeemId>/<file>.jpg`) and a note about how it went.
+  photoPath   String?
+  note        String?
 
   @@index([userId])
 }

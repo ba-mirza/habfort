@@ -1,33 +1,52 @@
 import SwiftUI
 
+/// A reward-diary card: the photo (if any), what was redeemed and when, and
+/// the note. Tapping it opens the editor.
 struct RedeemRowView: View {
     let redeem: Redeem
 
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(.green)
-                .frame(width: 30, height: 30)
-                .background(Color.green.opacity(0.15), in: Circle())
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(redeem.rewardName)
-                    .font(.body)
-                Text(ISO8601.shortDate(from: redeem.redeemedAt))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+        VStack(alignment: .leading, spacing: 10) {
+            if let url = redeem.photoUrl.flatMap(URL.init(string:)) {
+                AsyncImage(url: url) { image in
+                    image.resizable().scaledToFill()
+                } placeholder: {
+                    Color(.secondarySystemBackground).overlay(ProgressView())
+                }
+                .frame(height: 200)
+                .frame(maxWidth: .infinity)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
             }
 
-            Spacer()
+            HStack(spacing: 12) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(redeem.rewardName)
+                        .font(.headline)
+                    Text(ISO8601.shortDate(from: redeem.redeemedAt))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
 
-            HStack(spacing: 4) {
-                Image(systemName: "seal.fill")
-                Text("−\(redeem.amountSpent)")
-                    .font(.subheadline.bold())
+                Spacer()
+
+                HStack(spacing: 4) {
+                    Image(systemName: "seal.fill")
+                    Text("−\(redeem.amountSpent)")
+                        .font(.subheadline.bold())
+                }
+                .foregroundStyle(.secondary)
             }
-            .foregroundStyle(.secondary)
+
+            if let note = redeem.note, !note.isEmpty {
+                Text(note)
+                    .font(.subheadline)
+            } else if redeem.photoUrl == nil {
+                Label("Добавить фото и заметку", systemImage: "camera")
+                    .font(.subheadline)
+                    .foregroundStyle(Color.accentColor)
+            }
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
     }
 }

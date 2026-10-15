@@ -13,6 +13,8 @@ enum NotificationScheduler {
     /// it only ever reaches someone who's been away.
     private static let minimumQuietDays = 3
     private static let reminderHour = 10
+    private static let photoId = "reminder.photo"
+    private static let photoReminderHour = 19
 
     /// Asks once, after the user's first completed habit.
     static func requestPermissionAfterFirstCompletion() async {
@@ -49,6 +51,32 @@ enum NotificationScheduler {
         )
         // Same identifier replaces the pending one — there's only ever one.
         try? await center.add(request)
+    }
+
+    /// The evening after a redeem, ask for a diary photo. One shared
+    /// identifier: several redeems in a day still make a single reminder.
+    static func schedulePhotoReminder(rewardName: String) async {
+        let center = UNUserNotificationCenter.current()
+        let calendar = Calendar.current
+        guard await center.notificationSettings().authorizationStatus == .authorized,
+              let tomorrow = calendar.date(byAdding: .day, value: 1, to: Date()),
+              let fireDate = calendar.date(bySettingHour: photoReminderHour, minute: 0, second: 0, of: tomorrow)
+        else { return }
+
+        let content = UNMutableNotificationContent()
+        content.sound = .default
+        content.title = "Как прошло «\(rewardName)»?"
+        content.body = "Добавь фото в дневник наград — через месяц будет приятно вспомнить."
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: fireDate)
+        try? await center.add(UNNotificationRequest(
+            identifier: photoId,
+            content: content,
+            trigger: UNCalendarNotificationTrigger(dateMatching: components, repeats: false)
+        ))
+    }
+
+    static func cancelPhotoReminder() {
+        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [photoId])
     }
 
     static func nextFreshStart(after now: Date) -> Date? {

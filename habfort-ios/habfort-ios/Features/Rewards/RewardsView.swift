@@ -4,6 +4,10 @@ struct RewardsView: View {
     @State private var viewModel = RewardsViewModel()
     @State private var isShowingCreateReward = false
     @State private var rewardPendingRedeem: Reward?
+    @State private var editingRedeem: Redeem?
+    /// Picked on the celebration screen; opened once that cover is gone —
+    /// presenting a sheet while a full-screen cover dismisses is dropped.
+    @State private var redeemToEditAfterCelebration: Redeem?
 
     @Environment(APIClient.self) private var apiClient
 
@@ -64,9 +68,20 @@ struct RewardsView: View {
             } message: {
                 Text(viewModel.actionErrorMessage ?? "")
             }
-            .fullScreenCover(item: $viewModel.celebration) { celebration in
+            .fullScreenCover(item: $viewModel.celebration, onDismiss: {
+                editingRedeem = redeemToEditAfterCelebration
+                redeemToEditAfterCelebration = nil
+            }) { celebration in
                 RedeemCelebrationView(celebration: celebration) {
                     viewModel.celebration = nil
+                } onAddPhoto: {
+                    redeemToEditAfterCelebration = celebration.redeem
+                    viewModel.celebration = nil
+                }
+            }
+            .sheet(item: $editingRedeem) { redeem in
+                RedeemDiaryEditor(redeem: redeem) {
+                    await viewModel.load(apiClient: apiClient)
                 }
             }
             .task { await viewModel.load(apiClient: apiClient) }
@@ -154,6 +169,7 @@ struct RewardsView: View {
         } else {
             ForEach(viewModel.redeems) { redeem in
                 RedeemRowView(redeem: redeem)
+                    .onTapGesture { editingRedeem = redeem }
             }
         }
     }

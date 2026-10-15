@@ -11,7 +11,7 @@ final class RewardsViewModel {
         var displayName: String {
             switch self {
             case .rewards: "Награды"
-            case .redeems: "Потрачено"
+            case .redeems: "Дневник"
             case .archive: "Архив"
             }
         }
@@ -67,9 +67,10 @@ final class RewardsViewModel {
     func redeem(_ reward: Reward, apiClient: APIClient) async {
         actionErrorMessage = nil
         do {
-            let _: Redeem = try await apiClient.post("/redeems", body: CreateRedeemRequest(rewardId: reward.id))
+            let redeem: Redeem = try await apiClient.post("/redeems", body: CreateRedeemRequest(rewardId: reward.id))
             await load(apiClient: apiClient)
-            celebration = RedeemCelebration(rewardName: reward.name, isFirst: redeems.count == 1)
+            celebration = RedeemCelebration(redeem: redeem, rewardName: reward.name, isFirst: redeems.count == 1)
+            await NotificationScheduler.schedulePhotoReminder(rewardName: reward.name)
         } catch {
             actionErrorMessage = error.localizedDescription
         }

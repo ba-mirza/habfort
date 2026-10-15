@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { RewardsModule } from '../rewards/rewards.module';
+import { StorageModule } from '../storage/storage.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { RedeemsController } from './redeems.controller';
 import { RedeemsService } from './redeems.service';
 
 @Module({
-  imports: [AuthModule, WalletModule, RewardsModule],
+  imports: [AuthModule, WalletModule, RewardsModule, StorageModule],
   controllers: [RedeemsController],
   providers: [RedeemsService],
 })

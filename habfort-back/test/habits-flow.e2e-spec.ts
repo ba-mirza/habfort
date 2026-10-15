@@ -373,4 +373,27 @@ describe('Habits full flow (e2e)', () => {
     await request(app.getHttpServer()).post('/me/onboarding').expect(201);
     expect((await balance()) - before).toBe(60);
   });
+  it('saves a diary note on a redeem and rejects foreign photo paths', async () => {
+    const redeems = await request(app.getHttpServer())
+      .get('/redeems')
+      .expect(200);
+    const redeemId: string = redeems.body[0].id;
+
+    const updated = await request(app.getHttpServer())
+      .patch(`/redeems/${redeemId}`)
+      .send({ note: '  Great movie  ' })
+      .expect(200);
+    expect(updated.body.note).toBe('Great movie');
+
+    await request(app.getHttpServer())
+      .patch(`/redeems/${redeemId}`)
+      .send({ photoPath: 'someone-else/123/photo.jpg' })
+      .expect(400);
+
+    const cleared = await request(app.getHttpServer())
+      .patch(`/redeems/${redeemId}`)
+      .send({ note: '' })
+      .expect(200);
+    expect(cleared.body.note).toBeNull();
+  });
 });

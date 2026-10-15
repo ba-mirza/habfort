@@ -2,6 +2,7 @@ import { plainToInstance } from 'class-transformer';
 import {
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsString,
   IsUrl,
   validateSync,
@@ -18,6 +19,12 @@ class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   SUPABASE_JWT_AUDIENCE!: string;
+
+  // Optional so the API still boots without it; only the reward-photo
+  // endpoints need it, and they answer 503 until it's set.
+  @IsOptional()
+  @IsString()
+  SUPABASE_SERVICE_ROLE_KEY?: string;
 
   @IsNumber()
   PORT!: number;

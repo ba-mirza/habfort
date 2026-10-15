@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RedeemCelebration: Identifiable {
     let id = UUID()
+    let redeem: Redeem
     let rewardName: String
     let isFirst: Bool
 }
@@ -11,6 +12,7 @@ struct RedeemCelebration: Identifiable {
 struct RedeemCelebrationView: View {
     let celebration: RedeemCelebration
     let onClose: () -> Void
+    let onAddPhoto: () -> Void
 
     @State private var appeared = false
 
@@ -46,7 +48,10 @@ struct RedeemCelebrationView: View {
                 .foregroundStyle(Color.accentColor)
                 .controlSize(.large)
                 .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+
+                Button("Добавить фото в дневник", systemImage: "camera.fill", action: onAddPhoto)
+                    .font(.headline)
+                    .padding(.bottom, 16)
             }
             .foregroundStyle(.white)
         }
