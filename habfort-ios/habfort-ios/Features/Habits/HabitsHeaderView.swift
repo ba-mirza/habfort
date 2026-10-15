@@ -33,11 +33,11 @@ struct HabitsHeaderView: View {
                             .font(.system(.title3, design: .rounded, weight: .bold))
                             .lineLimit(1)
                     }
-                    .foregroundStyle(.black)
+                    .foregroundStyle(Palette.onHeader)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.subheadline.weight(.bold))
-                        .foregroundStyle(.black.opacity(0.6))
+                        .foregroundStyle(Palette.onHeader.opacity(0.6))
                 }
             }
             .buttonStyle(.plain)

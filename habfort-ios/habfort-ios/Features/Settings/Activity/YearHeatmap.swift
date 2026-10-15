@@ -10,7 +10,7 @@ struct YearHeatmap: View {
 
     private var weeks: [[Date]] {
         let calendar = WeekCalendar.calendar
-        let (start, end) = ActivityPeriod.year.days
+        let (start, end) = ActivityViewModel.yearDays
         var weeks: [[Date]] = []
         var weekStart = start
         while weekStart <= end {
@@ -39,7 +39,7 @@ struct YearHeatmap: View {
                         ForEach(Array(weeks.enumerated()), id: \.offset) { index, week in
                             VStack(spacing: spacing) {
                                 ForEach(week, id: \.self) { day in
-                                    HeatCell(count: viewModel.count(on: day), maxCount: viewModel.periodMax, size: cellSize)
+                                    HeatCell(count: viewModel.count(on: day), maxCount: viewModel.maxCount, size: cellSize)
                                         .opacity(day > Date() ? 0 : 1)
                                 }
                             }

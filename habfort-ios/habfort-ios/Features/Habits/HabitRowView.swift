@@ -82,7 +82,7 @@ struct HabitRowView: View {
         .padding(.vertical, 10)
         .padding(.trailing, 14)
         .padding(.leading, 4)
-        .card(fill: isDone ? Color.secondary.opacity(0.06) : Color(.systemBackground))
+        .card(fill: isDone ? Color.secondary.opacity(0.06) : Palette.surface)
         // The whole row is the toggle; editing lives in the trailing swipe.
         .contentShape(Rectangle())
         .onTapGesture { if !isPending { onToggle() } }

@@ -1,45 +1,29 @@
 import SwiftUI
 
-/// GitHub-style activity on the profile: a week table, a month calendar and
-/// a year heatmap, with the period's totals underneath.
+/// GitHub-style year of activity on the profile, with the year's totals.
 struct ActivitySectionView: View {
-    @Bindable var viewModel: ActivityViewModel
-    @Environment(APIClient.self) private var apiClient
+    let viewModel: ActivityViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Picker("Период", selection: $viewModel.period) {
-                ForEach(ActivityPeriod.allCases) { period in
-                    Text(period.displayName).tag(period)
-                }
-            }
-            .pickerStyle(.segmented)
-
-            switch viewModel.period {
-            case .week: WeekActivityTable(viewModel: viewModel)
-            case .month: MonthHeatmap(viewModel: viewModel)
-            case .year: YearHeatmap(viewModel: viewModel)
-            }
+            YearHeatmap(viewModel: viewModel)
 
             HStack(spacing: 8) {
                 statTile(title: "Выполнение", value: rateText)
                 statTile(title: "Лучший день", value: bestDayText)
-                statTile(title: "Всего", value: "\(viewModel.periodTotal)")
+                statTile(title: "Всего", value: "\(viewModel.total)")
             }
-        }
-        .onChange(of: viewModel.period) {
-            Task { await viewModel.loadDiscipline(apiClient: apiClient) }
         }
     }
 
     private var rateText: String {
-        guard let rate = viewModel.periodDiscipline?.rate else { return "—" }
+        guard let rate = viewModel.discipline?.rate else { return "—" }
         return "\(Int((rate * 100).rounded()))%"
     }
 
     private var bestDayText: String {
-        guard let best = viewModel.periodBestDay else { return "—" }
-        return "\(best.count) · \(best.date.formatted(.dateTime.day().month(.abbreviated).locale(Locale(identifier: "ru_RU"))))"
+        guard let best = viewModel.bestDay else { return "—" }
+        return "\(best.count) · \(best.date.formatted(.dateTime.day().month(.abbreviated).locale(ISO8601.russian)))"
     }
 
     private func statTile(title: String, value: String) -> some View {
@@ -54,11 +38,11 @@ struct ActivitySectionView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(10)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .background(Color.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
 }
 
-/// One heatmap square. Intensity is relative to the period's busiest day.
+/// One heatmap square. Intensity is relative to the busiest day.
 struct HeatCell: View {
     let count: Int
     let maxCount: Int

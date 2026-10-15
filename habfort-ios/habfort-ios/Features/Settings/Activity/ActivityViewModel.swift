@@ -1,51 +1,23 @@
 import Foundation
 
-enum ActivityPeriod: String, CaseIterable, Identifiable {
-    case week, month, year
-
-    var id: String { rawValue }
-
-    var displayName: String {
-        switch self {
-        case .week: "Неделя"
-        case .month: "Месяц"
-        case .year: "Год"
-        }
-    }
-
-    /// First and last day (inclusive) of the period that contains today. The
-    /// year is the trailing 52 weeks, GitHub-style, not the calendar year.
-    var days: (start: Date, end: Date) {
-        let calendar = WeekCalendar.calendar
-        let today = calendar.startOfDay(for: Date())
-        switch self {
-        case .week:
-            let days = WeekCalendar.days()
-            return (days.first ?? today, days.last ?? today)
-        case .month:
-            let interval = calendar.dateInterval(of: .month, for: today)
-            let start = interval?.start ?? today
-            let end = interval.flatMap { calendar.date(byAdding: .day, value: -1, to: $0.end) } ?? today
-            return (start, end)
-        case .year:
-            let yearAgo = calendar.date(byAdding: .weekOfYear, value: -52, to: today) ?? today
-            let start = calendar.dateInterval(of: .weekOfYear, for: yearAgo)?.start ?? yearAgo
-            return (start, today)
-        }
-    }
-}
-
-/// Profile heatmap data. A year of per-day counts is loaded once and sliced
-/// per period on the client; the completion rate depends on schedules, so
-/// it's asked from the backend for each period.
+/// Profile heatmap: the trailing 52 weeks of per-day completion counts, plus
+/// the completion rate over the same window (which depends on schedules, so
+/// the backend computes it).
 @MainActor
 @Observable
 final class ActivityViewModel {
-    var period: ActivityPeriod = .week
     private(set) var counts: [String: Int] = [:]
-    private(set) var weekEntries: [HabitHistoryEntry] = []
-    private(set) var periodDiscipline: DisciplineStats?
+    private(set) var discipline: DisciplineStats?
     var errorMessage: String?
+
+    /// First and last day of the grid: Monday 52 weeks back through today.
+    static var yearDays: (start: Date, end: Date) {
+        let calendar = WeekCalendar.calendar
+        let today = calendar.startOfDay(for: Date())
+        let yearAgo = calendar.date(byAdding: .weekOfYear, value: -52, to: today) ?? today
+        let start = calendar.dateInterval(of: .weekOfYear, for: yearAgo)?.start ?? yearAgo
+        return (start, today)
+    }
 
     static func key(for date: Date) -> String {
         dayKeyFormatter.string(from: date)
@@ -63,68 +35,34 @@ final class ActivityViewModel {
         counts[Self.key(for: day)] ?? 0
     }
 
-    private var periodDays: [Date] {
-        let calendar = WeekCalendar.calendar
-        let (start, end) = period.days
-        let last = min(end, calendar.startOfDay(for: Date()))
-        var days: [Date] = []
-        var day = start
-        while day <= last {
-            days.append(day)
-            guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
-            day = next
-        }
-        return days
+    var total: Int {
+        counts.values.reduce(0, +)
     }
 
-    var periodTotal: Int {
-        periodDays.reduce(0) { $0 + count(on: $1) }
+    var bestDay: (date: Date, count: Int)? {
+        guard let best = counts.max(by: { $0.value < $1.value }), best.value > 0,
+              let date = Self.dayKeyFormatter.date(from: best.key)
+        else { return nil }
+        return (date, best.value)
     }
 
-    var periodBestDay: (date: Date, count: Int)? {
-        periodDays
-            .map { (date: $0, count: count(on: $0)) }
-            .filter { $0.count > 0 }
-            .max { $0.count < $1.count }
-    }
-
-    /// Busiest day in the period, for scaling cell intensity.
-    var periodMax: Int {
-        periodBestDay?.count ?? 0
+    /// Busiest day, for scaling cell intensity.
+    var maxCount: Int {
+        counts.values.max() ?? 0
     }
 
     func load(apiClient: APIClient) async {
         errorMessage = nil
-        let week = ActivityPeriod.week.days
+        let (start, end) = Self.yearDays
+        let range = "from=\(Self.key(for: start))&to=\(Self.key(for: end))"
         do {
-            async let activityTask: ActivityStats = apiClient.get(
-                "/history/activity?from=\(Self.key(for: ActivityPeriod.year.days.start))&to=\(Self.key(for: Date()))"
-            )
-            async let weekTask: [HabitHistoryEntry] = apiClient.get(
-                "/history?take=100&from=\(Self.iso(week.start))&to=\(Self.iso(Self.nextDay(week.end)))"
-            )
-            let (activity, entries) = try await (activityTask, weekTask)
+            async let activityTask: ActivityStats = apiClient.get("/history/activity?\(range)")
+            async let disciplineTask: DisciplineStats = apiClient.get("/history/discipline?\(range)")
+            let (activity, fetchedDiscipline) = try await (activityTask, disciplineTask)
             counts = Dictionary(activity.byDay.map { ($0.date, $0.count) }, uniquingKeysWith: +)
-            weekEntries = entries
+            discipline = fetchedDiscipline
         } catch {
             errorMessage = error.localizedDescription
         }
-        await loadDiscipline(apiClient: apiClient)
-    }
-
-    func loadDiscipline(apiClient: APIClient) async {
-        let (start, end) = period.days
-        let last = min(end, WeekCalendar.calendar.startOfDay(for: Date()))
-        periodDiscipline = try? await apiClient.get(
-            "/history/discipline?from=\(Self.key(for: start))&to=\(Self.key(for: last))"
-        )
-    }
-
-    private static func nextDay(_ date: Date) -> Date {
-        WeekCalendar.calendar.date(byAdding: .day, value: 1, to: date) ?? date
-    }
-
-    private static func iso(_ date: Date) -> String {
-        ISO8601DateFormatter().string(from: date)
     }
 }
