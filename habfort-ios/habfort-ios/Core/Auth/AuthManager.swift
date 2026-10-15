@@ -48,6 +48,14 @@ final class AuthManager {
         try await client.auth.signOut()
     }
 
+    /// Deletes the account on the backend (all data plus the sign-in
+    /// identity), then drops the local session. Local-only sign-out: the
+    /// server-side session belongs to a user that no longer exists.
+    func deleteAccount(apiClient: APIClient) async throws {
+        try await apiClient.delete("/me")
+        try? await client.auth.signOut(scope: .local)
+    }
+
     /// Called from `SignInWithAppleButton`'s `onRequest` to attach a fresh
     /// nonce to the native Apple ID request.
     func prepareAppleSignInRequest(_ request: ASAuthorizationAppleIDRequest) {

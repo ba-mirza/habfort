@@ -8,6 +8,7 @@ import { Test } from '@nestjs/testing';
 import request from 'supertest';
 import { App } from 'supertest/types';
 import { AppModule } from '../src/app.module';
+import { SupabaseAdminService } from '../src/auth/supabase-admin.service';
 import { SupabaseAuthGuard } from '../src/auth/supabase-auth.guard';
 import { AllExceptionsFilter } from '../src/common/all-exceptions.filter';
 import { PrismaService } from '../src/prisma/prisma.service';
@@ -20,6 +21,8 @@ describe('Habits full flow (e2e)', () => {
   let prisma: PrismaService;
   const userId = randomUUID();
   const email = `e2e-${userId}@test.local`;
+  // The test user only exists in our database, never in Supabase Auth.
+  const supabaseAdmin = { deleteUser: jest.fn().mockResolvedValue(undefined) };
 
   beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
@@ -38,6 +41,8 @@ describe('Habits full flow (e2e)', () => {
           return true;
         },
       })
+      .overrideProvider(SupabaseAdminService)
+      .useValue(supabaseAdmin)
       .compile();
 
     app = moduleFixture.createNestApplication();
@@ -446,5 +451,21 @@ describe('Habits full flow (e2e)', () => {
   it('gives every user a short shareable public id', async () => {
     const me = await request(app.getHttpServer()).get('/me').expect(200);
     expect(me.body.publicId).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
+  });
+  // Keep last: it wipes the test user.
+  it('deletes the account and every row that belonged to it', async () => {
+    await request(app.getHttpServer()).delete('/me').expect(204);
+
+    expect(supabaseAdmin.deleteUser).toHaveBeenCalledWith(userId);
+    const remaining = await Promise.all([
+      prisma.user.count({ where: { id: userId } }),
+      prisma.habit.count({ where: { userId } }),
+      prisma.habitHistory.count({ where: { userId } }),
+      prisma.walletTransaction.count({ where: { userId } }),
+      prisma.reward.count({ where: { userId } }),
+      prisma.redeem.count({ where: { userId } }),
+      prisma.dailyBonusLog.count({ where: { userId } }),
+    ]);
+    expect(remaining).toEqual([0, 0, 0, 0, 0, 0, 0]);
   });
 });

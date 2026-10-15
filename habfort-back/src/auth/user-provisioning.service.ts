@@ -41,4 +41,10 @@ export class UserProvisioningService {
     this.lastSyncedAt.set(payload.sub, Date.now());
     return user;
   }
+
+  /** Drops the sync cache after the account is deleted, so a still-valid
+   *  token can't skip re-creating (or rather, finding) the row. */
+  forget(userId: string): void {
+    this.lastSyncedAt.delete(userId);
+  }
 }
