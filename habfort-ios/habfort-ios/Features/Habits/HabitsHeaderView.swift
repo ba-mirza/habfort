@@ -18,7 +18,7 @@ struct HabitsHeaderView: View {
     var body: some View {
         AccentHeader {
             NavigationLink {
-                SettingsView()
+                ProfileView()
             } label: {
                 HStack(spacing: 12) {
                     Text(name.first.map { String($0).uppercased() } ?? "?")

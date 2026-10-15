@@ -7,6 +7,7 @@ struct ProfileHeader: View {
     let publicId: String?
     let progress: ProgressStats?
     let onOpenPro: () -> Void
+    let onOpenSettings: () -> Void
 
     @State private var copied = false
 
@@ -23,6 +24,15 @@ struct ProfileHeader: View {
                 }
                 .buttonStyle(.plain)
                 Spacer()
+                Button(action: onOpenSettings) {
+                    Image(systemName: "gearshape.fill")
+                        .font(.headline)
+                        .foregroundStyle(.secondary)
+                        .frame(width: 38, height: 38)
+                        .background(Color.secondary.opacity(0.12), in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Настройки")
             }
 
             ZStack(alignment: .bottom) {
