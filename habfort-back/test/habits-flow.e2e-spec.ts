@@ -443,4 +443,8 @@ describe('Habits full flow (e2e)', () => {
     expect(byId.first_reward.unlocked).toBe(true);
     expect(byId.month_streak).toMatchObject({ unlocked: false, target: 30 });
   });
+  it('gives every user a short shareable public id', async () => {
+    const me = await request(app.getHttpServer()).get('/me').expect(200);
+    expect(me.body.publicId).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
+  });
 });

@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '../../generated/prisma';
 import { PrismaService } from '../prisma/prisma.service';
+import { generatePublicId } from '../users/public-id';
 import { SupabaseJwtPayload } from './jwt-payload.type';
 
 // Supabase Auth and our database are separate stores: an account can be signed
@@ -31,7 +32,11 @@ export class UserProvisioningService {
     const user = await this.prisma.user.upsert({
       where: { id: payload.sub },
       update: { email: payload.email },
-      create: { id: payload.sub, email: payload.email },
+      create: {
+        id: payload.sub,
+        email: payload.email,
+        publicId: generatePublicId(),
+      },
     });
     this.lastSyncedAt.set(payload.sub, Date.now());
     return user;

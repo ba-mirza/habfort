@@ -9,6 +9,14 @@ struct SettingsView: View {
     @State private var viewModel = ProfileViewModel()
     @State private var activityViewModel = ActivityViewModel()
     @State private var selectedAchievement: String?
+    @State private var destination: Destination?
+
+    /// Pushed screens. Driven by state rather than NavigationLinks: several
+    /// links inside one List row all fire together, and List adds its own
+    /// chevron next to ours.
+    enum Destination: Hashable {
+        case pro, invite
+    }
     @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     private var name: String {
@@ -28,8 +36,13 @@ struct SettingsView: View {
 
     var body: some View {
         List {
-            LevelCard(name: name, progress: viewModel.progress)
-                .cardRow(top: 8)
+            ProfileHeader(
+                name: name,
+                publicId: viewModel.me?.publicId,
+                progress: viewModel.progress,
+                onOpenPro: { destination = .pro }
+            )
+            .cardRow(top: 8)
 
             if let errorMessage = viewModel.errorMessage {
                 Text(errorMessage)
@@ -47,20 +60,17 @@ struct SettingsView: View {
             }
             .cardRow(top: 10)
 
-            VStack(spacing: 10) {
-                NavigationLink {
-                    SubscriptionView()
-                } label: {
-                    linkRow(icon: "crown.fill", color: Palette.yellow, title: "Beles Pro", subtitle: "Лобби, заморозка серии и другое")
-                }
-                NavigationLink {
-                    InviteFriendsView()
-                } label: {
-                    linkRow(icon: "person.2.fill", color: Palette.purple, title: "Пригласить друзей", subtitle: "Привычки вместе — скоро")
-                }
+            Button { destination = .pro } label: {
+                linkRow(icon: "crown.fill", color: Palette.yellow, title: "Beles Pro", subtitle: "Solo и Family — лобби, заморозка серии")
             }
             .buttonStyle(.plain)
             .cardRow(top: 20)
+
+            Button { destination = .invite } label: {
+                linkRow(icon: "person.2.fill", color: Palette.purple, title: "Пригласить друзей", subtitle: "Привычки вместе — скоро")
+            }
+            .buttonStyle(.plain)
+            .cardRow()
 
             section(title: "Достижения", trailing: achievementsCount) {
                 VStack(spacing: 12) {
@@ -113,6 +123,12 @@ struct SettingsView: View {
         .listStyle(.plain)
         .scrollContentBackground(.hidden)
         .background(Color(.systemBackground))
+        .navigationDestination(item: $destination) { destination in
+            switch destination {
+            case .pro: SubscriptionView()
+            case .invite: InviteFriendsView()
+            }
+        }
         .navigationTitle("Профиль")
         .navigationBarTitleDisplayMode(.inline)
         .refreshable { await load() }

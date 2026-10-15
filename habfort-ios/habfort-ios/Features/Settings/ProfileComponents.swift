@@ -1,46 +1,117 @@
 import SwiftUI
 
-/// Identity + level with the XP bar toward the next one.
-struct LevelCard: View {
+/// Profile hero: avatar with the plan badge, name, the copyable public id,
+/// and the level with a dashed XP bar toward the next one.
+struct ProfileHeader: View {
     let name: String
+    let publicId: String?
     let progress: ProgressStats?
+    let onOpenPro: () -> Void
+
+    @State private var copied = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 14) {
-                Text(name.first.map { String($0).uppercased() } ?? "?")
-                    .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 60, height: 60)
-                    .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 18, style: .continuous))
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(name)
-                        .font(.system(.title3, design: .rounded, weight: .bold))
-                        .lineLimit(1)
-                    Text("Уровень \(progress?.level ?? 1)")
-                        .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(Palette.purple)
+        VStack(spacing: 14) {
+            HStack {
+                Button(action: onOpenPro) {
+                    Label("PRO", systemImage: "crown.fill")
+                        .font(.subheadline.weight(.bold))
+                        .foregroundStyle(Color.accentColor)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(Color.accentColor.opacity(0.14), in: Capsule())
                 }
+                .buttonStyle(.plain)
                 Spacer()
             }
 
-            VStack(alignment: .leading, spacing: 6) {
-                ProgressView(
-                    value: Double(progress?.levelXp ?? 0),
-                    total: Double(max(progress?.levelSpan ?? 1, 1))
-                )
-                .tint(Palette.purple)
-                HStack {
-                    Text("\(progress?.levelXp ?? 0) / \(progress?.levelSpan ?? 100) XP")
-                    Spacer()
-                    Text("до уровня \((progress?.level ?? 1) + 1)")
+            ZStack(alignment: .bottom) {
+                Text(name.first.map { String($0).uppercased() } ?? "?")
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .frame(width: 104, height: 104)
+                    .background(Color.accentColor, in: Circle())
+                // Everyone is on the free plan until subscriptions ship.
+                Text("FREE")
+                    .font(.caption.weight(.heavy))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 4)
+                    .background(Color.gray, in: Capsule())
+                    .offset(y: 10)
+            }
+            .padding(.bottom, 8)
+
+            VStack(spacing: 4) {
+                Text(name)
+                    .font(.system(.title2, design: .rounded, weight: .bold))
+                    .lineLimit(1)
+                if let publicId {
+                    Button {
+                        UIPasteboard.general.string = publicId
+                        copied = true
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text(publicId)
+                                .font(.system(.subheadline, design: .monospaced, weight: .semibold))
+                            Image(systemName: copied ? "checkmark" : "doc.on.doc")
+                                .font(.footnote)
+                                .contentTransition(.symbolEffect(.replace))
+                        }
+                        .foregroundStyle(.secondary)
+                    }
+                    .buttonStyle(.plain)
+                    .sensoryFeedback(.success, trigger: copied) { _, now in now }
+                    .accessibilityLabel("ID \(publicId), скопировать")
+                    .task(id: copied) {
+                        guard copied else { return }
+                        try? await Task.sleep(for: .seconds(1.5))
+                        copied = false
+                    }
                 }
+            }
+
+            LevelProgress(progress: progress)
+                .padding(.top, 6)
+        }
+    }
+}
+
+/// Level with XP drawn as a dashed line: one dash per 5% of the level.
+private struct LevelProgress: View {
+    let progress: ProgressStats?
+    private let dashes = 20
+
+    private var filled: Int {
+        guard let progress, progress.levelSpan > 0 else { return 0 }
+        return min(dashes, Int((Double(progress.levelXp) / Double(progress.levelSpan) * Double(dashes)).rounded(.down)))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("Уровень \(progress?.level ?? 1)")
+                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .foregroundStyle(Palette.purple)
+                Spacer()
+                Text("\(progress?.levelXp ?? 0) / \(progress?.levelSpan ?? 100) XP")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.secondary)
+            }
+            HStack(spacing: 3) {
+                ForEach(0..<dashes, id: \.self) { index in
+                    Capsule()
+                        .fill(index < filled ? Palette.purple : Color.secondary.opacity(0.18))
+                        .frame(height: 6)
+                }
+            }
+            Text("до уровня \((progress?.level ?? 1) + 1)")
                 .font(.caption)
                 .foregroundStyle(.secondary)
-            }
         }
         .padding(16)
         .card()
+        .accessibilityElement(children: .combine)
     }
 }
 

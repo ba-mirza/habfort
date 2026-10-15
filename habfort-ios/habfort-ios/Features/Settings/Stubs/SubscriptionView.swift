@@ -7,7 +7,22 @@ struct SubscriptionView: View {
         var id: String { rawValue }
     }
 
+    enum Tier: String, CaseIterable, Identifiable {
+        case solo, family
+        var id: String { rawValue }
+        var title: String { self == .solo ? "Solo" : "Family" }
+    }
+
     @State private var plan: Plan = .yearly
+    @State private var tier: Tier = .solo
+
+    // Illustrative prices for the preview.
+    private var prices: (year: String, yearNote: String, month: String) {
+        switch tier {
+        case .solo: ("2 990 ₸", "249 ₸ в месяц · выгода 40%", "399 ₸")
+        case .family: ("4 990 ₸", "До 5 человек · 416 ₸ в месяц", "699 ₸")
+        }
+    }
 
     private let perks: [(icon: String, title: String, detail: String)] = [
         ("person.3.fill", "Общие лобби", "Привычки и цели вместе с друзьями"),
@@ -20,6 +35,20 @@ struct SubscriptionView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 hero
+
+                Picker("Тариф", selection: $tier) {
+                    ForEach(Tier.allCases) { tier in
+                        Text(tier.title).tag(tier)
+                    }
+                }
+                .pickerStyle(.segmented)
+
+                if tier == .family {
+                    Label("Один Pro на семью: до 5 участников, общая семейная лобби и общие цели.", systemImage: "person.3.sequence.fill")
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                        .transition(.opacity)
+                }
 
                 VStack(spacing: 12) {
                     ForEach(perks, id: \.title) { perk in
@@ -41,12 +70,12 @@ struct SubscriptionView: View {
                 .card()
 
                 VStack(spacing: 10) {
-                    planCard(.yearly, title: "Год", price: "2 990 ₸", note: "249 ₸ в месяц · выгода 40%")
-                    planCard(.monthly, title: "Месяц", price: "399 ₸", note: "Отмена в любой момент")
+                    planCard(.yearly, title: "Год", price: prices.year, note: prices.yearNote)
+                    planCard(.monthly, title: "Месяц", price: prices.month, note: "Отмена в любой момент")
                 }
 
                 Button {} label: {
-                    Text("Оформить Pro")
+                    Text("Оформить Pro \(tier.title)")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
@@ -57,6 +86,7 @@ struct SubscriptionView: View {
             }
             .padding(16)
         }
+        .animation(.snappy, value: tier)
         .background(Color(.systemBackground))
         .navigationTitle("Beles Pro")
         .navigationBarTitleDisplayMode(.inline)
