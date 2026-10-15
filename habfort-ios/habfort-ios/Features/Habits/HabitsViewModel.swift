@@ -49,7 +49,7 @@ final class HabitsViewModel {
             walletBalance = balance.balance
             await NotificationScheduler.rescheduleDormantReminder(goal: goal, balance: walletBalance)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
         isLoading = false
     }
@@ -90,7 +90,7 @@ final class HabitsViewModel {
             if let index = habits.firstIndex(where: { $0.id == habit.id }) {
                 habits[index].isCompletedToday = habit.isCompletedToday
             }
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 
@@ -104,7 +104,7 @@ final class HabitsViewModel {
             try await apiClient.delete("/habits/\(habit.id)")
         } catch {
             withAnimation { habits.insert(habit, at: min(index, habits.count)) }
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 

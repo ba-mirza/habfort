@@ -120,7 +120,7 @@ struct RedeemDiaryEditor: View {
             await onSaved()
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 

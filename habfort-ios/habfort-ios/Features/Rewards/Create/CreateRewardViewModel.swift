@@ -54,7 +54,7 @@ final class CreateRewardViewModel {
             let _: Reward = try await apiClient.post("/rewards", body: request)
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
             return false
         }
     }

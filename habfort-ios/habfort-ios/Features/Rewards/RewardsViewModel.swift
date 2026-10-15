@@ -49,7 +49,7 @@ final class RewardsViewModel {
             redeems = fetchedRedeems
             walletBalance = balance.balance
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
         isLoading = false
     }
@@ -64,7 +64,7 @@ final class RewardsViewModel {
             celebration = RedeemCelebration(redeem: redeem, rewardName: reward.name, isFirst: redeems.count == 1)
             await NotificationScheduler.schedulePhotoReminder(rewardName: reward.name)
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = UserFacingError.message(for: error)
         }
     }
 
@@ -75,7 +75,7 @@ final class RewardsViewModel {
             rewards.removeAll { $0.id == reward.id }
             archivedRewards.insert(archived, at: 0)
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = UserFacingError.message(for: error)
         }
     }
 
@@ -91,7 +91,7 @@ final class RewardsViewModel {
             }
             rewards = try await apiClient.get("/rewards")
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = UserFacingError.message(for: error)
         }
     }
 
@@ -102,7 +102,7 @@ final class RewardsViewModel {
             archivedRewards.removeAll { $0.id == reward.id }
             rewards.insert(restored, at: 0)
         } catch {
-            actionErrorMessage = error.localizedDescription
+            actionErrorMessage = UserFacingError.message(for: error)
         }
     }
 }

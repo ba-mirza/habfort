@@ -19,7 +19,7 @@ struct RootView: View {
             } else if authManager.session != nil {
                 MainTabView()
             } else {
-                LoginView()
+                AuthFlowView()
             }
         }
     }

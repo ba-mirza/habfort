@@ -87,7 +87,7 @@ struct SettingsView: View {
         do {
             try await authManager.deleteAccount(apiClient: apiClient)
         } catch {
-            deletionError = error.localizedDescription
+            deletionError = UserFacingError.message(for: error)
         }
     }
 }

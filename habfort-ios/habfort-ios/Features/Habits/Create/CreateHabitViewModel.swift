@@ -90,7 +90,7 @@ final class CreateHabitViewModel {
             reset()
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
             return false
         }
     }

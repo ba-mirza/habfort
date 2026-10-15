@@ -96,7 +96,7 @@ final class OnboardingViewModel {
             let _: Me = try await apiClient.post("/me/onboarding")
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
             return false
         }
     }

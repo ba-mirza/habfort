@@ -41,7 +41,7 @@ final class HistoryViewModel {
             stats = fetchedStats
             canLoadMore = fetchedEntries.count == pageSize
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
         isLoading = false
     }
@@ -57,7 +57,7 @@ final class HistoryViewModel {
             entries += page.filter { !known.contains($0.id) }
             canLoadMore = page.count == pageSize
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
         isLoadingMore = false
     }

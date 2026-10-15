@@ -62,7 +62,7 @@ final class ActivityViewModel {
             counts = Dictionary(activity.byDay.map { ($0.date, $0.count) }, uniquingKeysWith: +)
             discipline = fetchedDiscipline
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 }

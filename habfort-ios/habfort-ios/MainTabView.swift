@@ -28,7 +28,7 @@ struct MainTabView: View {
         case "profile": NavigationStack { ProfileView() }
         case "invite": NavigationStack { InviteFriendsView() }
         case "pro": NavigationStack { SubscriptionView() }
-        case "login": LoginView()
+        case "login": AuthFlowView()
         default: tabs
         }
         #else

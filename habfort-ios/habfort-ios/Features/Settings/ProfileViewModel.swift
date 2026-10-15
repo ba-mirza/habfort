@@ -18,7 +18,7 @@ final class ProfileViewModel {
             async let meTask: Me = apiClient.get("/me")
             (progress, streak, discipline, me) = try await (progressTask, streakTask, disciplineTask, meTask)
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 }

@@ -121,7 +121,7 @@ struct EditHabitView: View {
             habitsViewModel.replace(updated)
             dismiss()
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = UserFacingError.message(for: error)
         }
     }
 }
