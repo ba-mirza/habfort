@@ -25,7 +25,7 @@ struct HabitsHeaderView: View {
                         .font(.system(.title3, design: .rounded, weight: .bold))
                         .foregroundStyle(Color.accentColor)
                         .frame(width: 46, height: 46)
-                        .brutalCard(fill: Color(.systemBackground), radius: 14, shadow: 2)
+                        .card(radius: 14, bordered: false)
                     VStack(alignment: .leading, spacing: 0) {
                         Text("Привет,")
                             .font(.subheadline)
@@ -85,7 +85,7 @@ private struct GoalCard: View {
                 }
                 Image(systemName: "seal.fill")
                     .font(.title3)
-                    .foregroundStyle(Brutal.yellow)
+                    .foregroundStyle(Palette.yellow)
                 Spacer()
             }
             if goal != nil {
@@ -94,7 +94,7 @@ private struct GoalCard: View {
             }
         }
         .padding(16)
-        .brutalCard()
+        .card(bordered: false)
         .accessibilityElement(children: .combine)
     }
 
@@ -117,7 +117,7 @@ private struct GoalBar: View {
                 Capsule().fill(Color.secondary.opacity(0.15))
                 Capsule()
                     .fill(isAccelerating
-                          ? AnyShapeStyle(LinearGradient(colors: [.accentColor, Brutal.yellow], startPoint: .leading, endPoint: .trailing))
+                          ? AnyShapeStyle(LinearGradient(colors: [.accentColor, Palette.yellow], startPoint: .leading, endPoint: .trailing))
                           : AnyShapeStyle(Color.accentColor))
                     .frame(width: width)
                     .overlay {
@@ -129,7 +129,6 @@ private struct GoalBar: View {
                     }
                     .clipShape(Capsule())
             }
-            .overlay(Capsule().stroke(Brutal.ink, lineWidth: Brutal.stroke))
             .animation(.spring(response: 0.5, dampingFraction: 0.8), value: progress)
         }
         .onAppear(perform: startShine)

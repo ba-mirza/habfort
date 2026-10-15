@@ -9,8 +9,8 @@ struct StatTilesView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            tile(value: "\(streak?.current ?? 0)", label: streakLabel, icon: "flame.fill", color: Brutal.purple)
-            tile(value: "\(doneToday)/\(dueToday)", label: "Сегодня", icon: "checkmark.circle.fill", color: Brutal.teal)
+            tile(value: "\(streak?.current ?? 0)", label: streakLabel, icon: "flame.fill", color: Palette.purple)
+            tile(value: "\(doneToday)/\(dueToday)", label: "Сегодня", icon: "checkmark.circle.fill", color: Palette.teal)
             tile(value: "\(activeCount)", label: "Активных", icon: "list.bullet", color: .accentColor)
         }
     }
@@ -43,7 +43,7 @@ struct StatTilesView: View {
         .foregroundStyle(.white)
         .padding(12)
         .frame(maxWidth: .infinity, minHeight: 104, alignment: .leading)
-        .brutalCard(fill: LinearGradient(colors: [color, color.opacity(0.75)], startPoint: .topLeading, endPoint: .bottomTrailing), radius: 16)
+        .card(fill: color, radius: 16, bordered: false)
         .accessibilityElement(children: .combine)
     }
 }

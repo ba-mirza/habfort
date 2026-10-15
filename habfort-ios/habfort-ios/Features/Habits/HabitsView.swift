@@ -42,7 +42,11 @@ struct HabitsView: View {
                             WeekStripView(
                                 days: WeekCalendar.days(),
                                 selectedDay: $selectedDay,
-                                hasCompletions: viewModel.hasCompletions(on:)
+                                doneDays: Set(
+                                    WeekCalendar.days()
+                                        .filter(viewModel.hasCompletions(on:))
+                                        .map(WeekCalendar.calendar.startOfDay(for:))
+                                )
                             )
                         }
                         .textCase(nil)

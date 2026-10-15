@@ -25,7 +25,7 @@ struct DayHabitRowView: View {
         .padding(.vertical, 6)
         .padding(.trailing, 14)
         .padding(.leading, 4)
-        .brutalCard()
+        .card()
         .accessibilityElement(children: .combine)
     }
 

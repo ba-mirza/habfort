@@ -1,11 +1,22 @@
 import SwiftUI
 
 struct MainTabView: View {
-    enum AppTab: Hashable {
+    enum AppTab: String, Hashable {
         case habits, rewards, history, create
     }
 
-    @State private var selectedTab: AppTab = .habits
+    @State private var selectedTab: AppTab = Self.initialTab
+
+    /// Debug builds can open on another tab with `-initialTab rewards` (launch
+    /// arguments land in UserDefaults) — handy for checking a screen in the
+    /// Simulator without tapping through.
+    private static var initialTab: AppTab {
+        #if DEBUG
+        UserDefaults.standard.string(forKey: "initialTab").flatMap(AppTab.init(rawValue:)) ?? .habits
+        #else
+        .habits
+        #endif
+    }
     @State private var habitsViewModel = HabitsViewModel()
     @State private var showOnboarding = false
     @Environment(APIClient.self) private var apiClient

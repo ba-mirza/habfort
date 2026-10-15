@@ -15,30 +15,32 @@ struct HabitRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
+            // Same mark as the week strip: an empty ring, filled dark with a
+            // white check once done.
             ZStack {
                 Circle()
-                        .fill(isDone ? Brutal.green : Color(.systemBackground))
-                    Circle()
-                        .stroke(Brutal.ink, lineWidth: 2)
-                    if isDone {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 14, weight: .heavy))
-                            .foregroundStyle(.white)
-                            .transition(.scale.combined(with: .opacity))
-                    }
+                    .fill(isDone ? Palette.ink : .clear)
+                Circle()
+                    .stroke(isDone ? Palette.ink : Color.secondary.opacity(0.5), lineWidth: 1.5)
+                if isDone {
+                    Image(systemName: "checkmark")
+                        .font(.system(size: 12, weight: .heavy))
+                        .foregroundStyle(Color(.systemBackground))
+                        .transition(.scale.combined(with: .opacity))
                 }
-                .frame(width: 30, height: 30)
-                .frame(width: 44, height: 44)
+            }
+            .frame(width: 26, height: 26)
+            .frame(width: 40, height: 44)
 
             Image(systemName: habit.type.iconName)
-                .font(.system(size: 15, weight: .bold))
-                .foregroundStyle(.white)
-                .frame(width: 36, height: 36)
-                .brutalCard(fill: habit.type.tint, radius: 10, shadow: 2)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(habit.type.tint)
+                .frame(width: 34, height: 34)
+                .card(fill: habit.type.tint.opacity(0.14), radius: 10, bordered: false)
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(habit.name)
-                    .font(.system(.body, design: .rounded, weight: .semibold))
+                    .font(.body.weight(.medium))
                     .strikethrough(isDone, color: .secondary)
                     .foregroundStyle(isDone ? .secondary : .primary)
                     .lineLimit(2)
@@ -56,18 +58,18 @@ struct HabitRowView: View {
             if let reward {
                 VStack(alignment: .trailing, spacing: 3) {
                     Label("+\(reward.coins)", systemImage: "seal.fill")
-                        .font(.system(.subheadline, design: .rounded, weight: .heavy))
+                        .font(.subheadline.weight(.semibold))
                         .foregroundStyle(.primary)
-                        .labelStyle(TrailingIconLabelStyle(iconColor: Brutal.yellow))
+                        .labelStyle(TrailingIconLabelStyle(iconColor: Palette.yellow))
                     Text("+\(reward.xp) XP")
-                        .font(.system(.caption2, design: .rounded, weight: .bold))
-                        .foregroundStyle(Brutal.purple)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(.secondary)
                 }
                 .opacity(isDone ? 0.45 : 1)
                 .overlay(alignment: .top) {
                     if floatingReward {
                         Text("+\(reward.coins)")
-                            .font(.system(.headline, design: .rounded, weight: .heavy))
+                            .font(.headline.weight(.bold))
                             .foregroundStyle(Color.accentColor)
                             .transition(.asymmetric(
                                 insertion: .offset(y: 0).combined(with: .opacity),
@@ -80,7 +82,7 @@ struct HabitRowView: View {
         .padding(.vertical, 10)
         .padding(.trailing, 14)
         .padding(.leading, 4)
-        .brutalCard(fill: isDone ? AnyShapeStyle(Brutal.green.opacity(0.1)) : AnyShapeStyle(Color(.systemBackground)))
+        .card(fill: isDone ? Color.secondary.opacity(0.06) : Color(.systemBackground))
         // The whole row is the toggle; editing lives in the trailing swipe.
         .contentShape(Rectangle())
         .onTapGesture { if !isPending { onToggle() } }

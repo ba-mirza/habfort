@@ -6,7 +6,10 @@ import SwiftUI
 struct WeekStripView: View {
     let days: [Date]
     @Binding var selectedDay: Date
-    let hasCompletions: (Date) -> Bool
+    /// Days (start of day) with at least one completion. A plain value rather
+    /// than a lookup closure: as a pinned List header this view is only
+    /// re-rendered when its inputs change.
+    let doneDays: Set<Date>
 
     // Fixed Russian labels (same as DayOfWeekPicker) rather than the device
     // locale — the app's UI is Russian-only.
@@ -25,7 +28,7 @@ struct WeekStripView: View {
         let isSelected = calendar.isDate(day, inSameDayAs: selectedDay)
         let isToday = calendar.isDateInToday(day)
         let isFuture = day > Date() && !isToday
-        let isDone = !isFuture && hasCompletions(day)
+        let isDone = !isFuture && doneDays.contains(calendar.startOfDay(for: day))
 
         return Button {
             withAnimation(.snappy) { selectedDay = day }
@@ -36,7 +39,7 @@ struct WeekStripView: View {
                     .foregroundStyle(isSelected ? Color(.systemBackground) : .primary)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 2)
-                    .background(Capsule().fill(isSelected ? Brutal.ink : .clear))
+                    .background(Capsule().fill(isSelected ? Palette.ink : .clear))
 
                 circle(isToday: isToday, isFuture: isFuture, isDone: isDone)
                     .frame(width: 38, height: 38)
@@ -66,7 +69,7 @@ struct WeekStripView: View {
             }
         } else if isDone {
             ZStack {
-                Circle().fill(Brutal.ink)
+                Circle().fill(Palette.ink)
                 Image(systemName: "checkmark")
                     .font(.system(size: 14, weight: .heavy))
                     .foregroundStyle(Color(.systemBackground))
