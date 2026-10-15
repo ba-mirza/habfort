@@ -47,6 +47,21 @@ struct SettingsView: View {
             }
             .cardRow(top: 10)
 
+            VStack(spacing: 10) {
+                NavigationLink {
+                    SubscriptionView()
+                } label: {
+                    linkRow(icon: "crown.fill", color: Palette.yellow, title: "Beles Pro", subtitle: "Лобби, заморозка серии и другое")
+                }
+                NavigationLink {
+                    InviteFriendsView()
+                } label: {
+                    linkRow(icon: "person.2.fill", color: Palette.purple, title: "Пригласить друзей", subtitle: "Привычки вместе — скоро")
+                }
+            }
+            .buttonStyle(.plain)
+            .cardRow(top: 20)
+
             section(title: "Достижения", trailing: achievementsCount) {
                 VStack(spacing: 12) {
                     LazyVGrid(columns: badgeColumns, spacing: 16) {
@@ -112,6 +127,27 @@ struct SettingsView: View {
     private var achievementsCount: String? {
         guard let achievements = viewModel.progress?.achievements else { return nil }
         return "\(achievements.filter(\.unlocked).count) из \(achievements.count)"
+    }
+
+    private func linkRow(icon: String, color: Color, title: String, subtitle: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(.white)
+                .frame(width: 38, height: 38)
+                .card(fill: color, radius: 11, bordered: false)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title).font(.body.weight(.semibold))
+                Text(subtitle).font(.caption).foregroundStyle(.secondary)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(.tertiary)
+        }
+        .padding(14)
+        .card()
+        .contentShape(Rectangle())
     }
 
     private func section(title: String, trailing: String? = nil, @ViewBuilder content: () -> some View) -> some View {
