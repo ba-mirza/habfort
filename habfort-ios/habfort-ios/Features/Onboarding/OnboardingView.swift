@@ -47,7 +47,7 @@ struct OnboardingView: View {
             CoinBurstView()
                 .frame(width: 160, height: 160)
             Text("Добро пожаловать!")
-                .font(.largeTitle.bold())
+                .font(.system(.largeTitle, design: .rounded, weight: .bold))
             Text("Держи \(viewModel.welcomeBonus) жетонов на старт.\nВыполняй привычки, копи жетоны и трать их на награды, которые выбираешь сам.")
                 .multilineTextAlignment(.center)
                 .foregroundStyle(.secondary)
@@ -60,7 +60,7 @@ struct OnboardingView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
                 Text("Выбери первую цель")
-                    .font(.title.bold())
+                    .font(.system(.title, design: .rounded, weight: .bold))
                 Text("Маленькая цель, до которой пара дней, работает лучше большой мечты.")
                     .foregroundStyle(.secondary)
 
@@ -85,7 +85,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 24) {
             Spacer()
             Text("Как это работает")
-                .font(.title.bold())
+                .font(.system(.title, design: .rounded, weight: .bold))
             flowRow(icon: "checkmark.circle.fill", color: .green, title: "Выполняй привычки", subtitle: "Лёгкая, средняя или сложная — за каждую фиксированные жетоны.")
             flowRow(icon: "seal.fill", color: .accentColor, title: "Копи жетоны", subtitle: "Уже есть \(viewModel.welcomeBonus) — до «\(viewModel.goalName)» осталось \(viewModel.coinsLeftAfterBonus).")
             flowRow(icon: "gift.fill", color: .orange, title: "Забирай награду", subtitle: viewModel.daysToGoal > 0
@@ -164,9 +164,9 @@ struct OnboardingView: View {
                     .foregroundStyle(Color.accentColor)
             }
             .padding(12)
-            .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+            .card()
             .overlay {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                RoundedRectangle(cornerRadius: Palette.radius, style: .continuous)
                     .stroke(isSelected ? Color.accentColor : .clear, lineWidth: 2)
             }
         }
@@ -193,9 +193,9 @@ struct OnboardingView: View {
             }
         }
         .padding(12)
-        .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .card()
         .overlay {
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
+            RoundedRectangle(cornerRadius: Palette.radius, style: .continuous)
                 .stroke(viewModel.isCustom ? Color.accentColor : .clear, lineWidth: 2)
         }
     }
