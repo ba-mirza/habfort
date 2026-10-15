@@ -82,10 +82,6 @@ final class AuthManager {
         )
     }
 
-    func signInWithGoogle() async throws {
-        try await client.auth.signInWithOAuth(provider: .google, redirectTo: AppConfig.oauthRedirectURL)
-    }
-
     private static func randomNonceString(length: Int = 32) -> String {
         var randomBytes = [UInt8](repeating: 0, count: length)
         let status = SecRandomCopyBytes(kSecRandomDefault, randomBytes.count, &randomBytes)

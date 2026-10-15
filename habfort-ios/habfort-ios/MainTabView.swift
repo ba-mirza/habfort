@@ -23,11 +23,12 @@ struct MainTabView: View {
 
     var body: some View {
         #if DEBUG
-        // `-initialTab profile|invite|pro` opens that pushed screen on its own.
+        // `-initialTab profile|invite|pro|login` opens that screen on its own.
         switch UserDefaults.standard.string(forKey: "initialTab") {
         case "profile": NavigationStack { ProfileView() }
         case "invite": NavigationStack { InviteFriendsView() }
         case "pro": NavigationStack { SubscriptionView() }
+        case "login": LoginView()
         default: tabs
         }
         #else
