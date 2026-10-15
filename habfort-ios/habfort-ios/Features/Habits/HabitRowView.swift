@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// A habit as a card: checkbox, type icon, name with a difficulty meter, and
-/// what completing it pays (coins + XP) on the right. Completing floats the
-/// reward up off the card.
+/// what completing it pays (coins + XP) on the right. Tapping anywhere on it
+/// toggles completion; completing floats the reward up off the card.
 struct HabitRowView: View {
     let habit: Habit
     let reward: (coins: Int, xp: Int)?
@@ -15,11 +15,8 @@ struct HabitRowView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            // Reminders-style checkbox: completing is one deliberate tap.
-            // Borderless so it wins over the row's own tap (which opens edit).
-            Button(action: onToggle) {
-                ZStack {
-                    Circle()
+            ZStack {
+                Circle()
                         .fill(isDone ? Brutal.green : Color(.systemBackground))
                     Circle()
                         .stroke(Brutal.ink, lineWidth: 2)
@@ -32,12 +29,6 @@ struct HabitRowView: View {
                 }
                 .frame(width: 30, height: 30)
                 .frame(width: 44, height: 44)
-                .contentShape(Rectangle())
-            }
-            .buttonStyle(.borderless)
-            .disabled(isPending)
-            .sensoryFeedback(.success, trigger: isDone) { _, done in done }
-            .accessibilityLabel(isDone ? "Отменить выполнение" : "Выполнить")
 
             Image(systemName: habit.type.iconName)
                 .font(.system(size: 15, weight: .bold))
@@ -90,6 +81,13 @@ struct HabitRowView: View {
         .padding(.trailing, 14)
         .padding(.leading, 4)
         .brutalCard(fill: isDone ? AnyShapeStyle(Brutal.green.opacity(0.1)) : AnyShapeStyle(Color(.systemBackground)))
+        // The whole row is the toggle; editing lives in the trailing swipe.
+        .contentShape(Rectangle())
+        .onTapGesture { if !isPending { onToggle() } }
+        .sensoryFeedback(.success, trigger: isDone) { _, done in done }
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityHint(isDone ? "Отменить выполнение" : "Отметить выполненной")
         .onChange(of: isDone) { _, done in
             guard done else { return }
             floatingReward = true

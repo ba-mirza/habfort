@@ -103,8 +103,6 @@ struct HabitsView: View {
                     isPending: viewModel.pendingIds.contains(habit.id),
                     onToggle: { Task { await viewModel.toggleCompletion(habit, apiClient: apiClient) } }
                 )
-                .contentShape(Rectangle())
-                .onTapGesture { editingHabit = habit }
                 .cardRow()
                 .swipeActions(edge: .trailing) {
                     Button(role: .destructive) {
@@ -112,6 +110,12 @@ struct HabitsView: View {
                     } label: {
                         Label("Удалить", systemImage: "trash")
                     }
+                    Button {
+                        editingHabit = habit
+                    } label: {
+                        Label("Изменить", systemImage: "pencil")
+                    }
+                    .tint(.gray)
                 }
             }
         }
