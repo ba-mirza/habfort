@@ -1,8 +1,8 @@
 import SwiftUI
 
 /// Everything a signed-out user sees: a welcome screen, then the email form
-/// for registering or signing in. Always dark — the warm gradient is built
-/// for it — whatever the app theme.
+/// for registering or signing in. Always light — the peach-to-white gradient
+/// is built for it — whatever the app theme.
 struct AuthFlowView: View {
     @State private var path: [AuthFormView.Mode] = Self.initialPath
 
@@ -25,27 +25,34 @@ struct AuthFlowView: View {
                 AuthFormView(initialMode: mode)
             }
         }
-        .tint(.white)
-        .environment(\.colorScheme, .dark)
+        .tint(AuthColors.ink)
+        .environment(\.colorScheme, .light)
     }
 }
 
-/// Orange glow at the top fading into near-black.
+/// Colors of the signed-out screens, taken from the brand artwork.
+enum AuthColors {
+    static let ink = Color(red: 0.11, green: 0.09, blue: 0.08)
+    /// The asset color directly: `Color.accentColor` follows `.tint`, which
+    /// these screens set to ink for the back button.
+    static let accent = Color("AccentColor")
+    static let brandOrange = Color(red: 0.78, green: 0.40, blue: 0.18)
+    static let peach = Color(red: 0.98, green: 0.85, blue: 0.74)
+    static let cream = Color(red: 0.99, green: 0.97, blue: 0.95)
+}
+
+/// Peach at the top, through the brand cream, into white.
 struct AuthBackground: View {
     var body: some View {
-        ZStack {
-            Color(red: 0.05, green: 0.05, blue: 0.06)
-            LinearGradient(
-                stops: [
-                    .init(color: Color(red: 0.96, green: 0.62, blue: 0.20), location: 0),
-                    .init(color: Color(red: 0.62, green: 0.27, blue: 0.08), location: 0.25),
-                    .init(color: Color(red: 0.20, green: 0.09, blue: 0.05), location: 0.5),
-                    .init(color: .clear, location: 0.75),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-        }
+        LinearGradient(
+            stops: [
+                .init(color: AuthColors.peach, location: 0),
+                .init(color: AuthColors.cream, location: 0.45),
+                .init(color: .white, location: 0.8),
+            ],
+            startPoint: .top,
+            endPoint: .bottom
+        )
         .ignoresSafeArea()
     }
 }
@@ -59,29 +66,29 @@ struct AppLogo: View {
             .scaledToFit()
             .frame(width: size, height: size)
             .clipShape(RoundedRectangle(cornerRadius: size * 0.225, style: .continuous))
-            .shadow(color: .black.opacity(0.35), radius: 16, y: 8)
+            .shadow(color: AuthColors.brandOrange.opacity(0.35), radius: 18, y: 10)
             .accessibilityHidden(true)
     }
 }
 
-/// Large light button (primary) or dark translucent one (secondary).
+/// Large orange button (primary) or white outlined one (secondary).
 struct AuthButtonStyle: ButtonStyle {
     var primary = true
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.headline)
-            .foregroundStyle(primary ? Color.black : Color.white)
+            .foregroundStyle(primary ? Color.white : AuthColors.ink)
             .frame(maxWidth: .infinity)
             .frame(height: 54)
             .background(
-                primary ? Color.white.opacity(0.92) : Color.white.opacity(0.08),
+                primary ? AuthColors.accent : Color.white,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous)
             )
             .overlay {
                 if !primary {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        .stroke(AuthColors.ink.opacity(0.1), lineWidth: 1)
                 }
             }
             .opacity(configuration.isPressed ? 0.8 : 1)
@@ -102,11 +109,15 @@ private struct WelcomeView: View {
             AppLogo()
                 .scaleEffect(appeared ? 1 : 0.8)
                 .opacity(appeared ? 1 : 0)
-                .padding(.bottom, 28)
+                .padding(.bottom, 20)
 
-            (Text("Добро пожаловать в Beles.\n").foregroundStyle(.white.opacity(0.5))
-             + Text("Выполняй привычки, копи жетоны и трать их на награды").foregroundStyle(.white))
-                .font(.system(.title, design: .rounded, weight: .bold))
+            (Text("Beles ").foregroundStyle(AuthColors.ink) + Text("App").foregroundStyle(AuthColors.brandOrange))
+                .font(.system(size: 34, weight: .heavy, design: .rounded))
+                .padding(.bottom, 14)
+
+            (Text("Добро пожаловать.\n").foregroundStyle(AuthColors.ink.opacity(0.45))
+             + Text("Выполняй привычки, копи жетоны и трать их на награды").foregroundStyle(AuthColors.ink))
+                .font(.system(.title2, design: .rounded, weight: .bold))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 24)
 
@@ -114,10 +125,11 @@ private struct WelcomeView: View {
                 ForEach(["bolt.fill", "flame.fill", "arrow.triangle.2.circlepath", "gift.fill"], id: \.self) { icon in
                     Image(systemName: icon)
                         .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(.white.opacity(0.75))
+                        .foregroundStyle(AuthColors.accent)
                         .frame(width: 52, height: 52)
-                        .background(Color(white: 0.16), in: Circle())
-                        .overlay(Circle().stroke(Color(red: 0.05, green: 0.05, blue: 0.06), lineWidth: 3))
+                        .background(.white, in: Circle())
+                        .overlay(Circle().stroke(AuthColors.cream, lineWidth: 3))
+                        .shadow(color: AuthColors.brandOrange.opacity(0.12), radius: 6, y: 3)
                 }
             }
             .padding(.top, 24)
@@ -134,7 +146,7 @@ private struct WelcomeView: View {
                 .overlay(alignment: .topTrailing) {
                     Text("Бесплатно")
                         .font(.caption.weight(.semibold))
-                        .foregroundStyle(.black)
+                        .foregroundStyle(AuthColors.ink)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 4)
                         .background(Color(red: 0.45, green: 0.85, blue: 0.62), in: Capsule())

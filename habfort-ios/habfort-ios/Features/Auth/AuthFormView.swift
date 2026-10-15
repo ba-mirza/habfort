@@ -37,20 +37,20 @@ struct AuthFormView: View {
 
                 Text(mode == .signUp ? "Регистрация в Beles" : "С возвращением")
                     .font(.system(.title, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AuthColors.ink)
                     .padding(.bottom, 14)
                     .contentTransition(.opacity)
 
                 if confirmationSent {
                     Label("Мы отправили письмо для подтверждения. Подтвердите адрес и войдите.", systemImage: "envelope.fill")
-                        .foregroundStyle(.white.opacity(0.8))
+                        .foregroundStyle(AuthColors.ink.opacity(0.8))
                         .padding(16)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                        .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
 
                 AuthField(error: emailError) {
-                    TextField("", text: $email, prompt: Text("Email").foregroundStyle(.white.opacity(0.4)))
+                    TextField("", text: $email, prompt: Text("Email").foregroundStyle(AuthColors.ink.opacity(0.35)))
                         .textContentType(.emailAddress)
                         .keyboardType(.emailAddress)
                         .textInputAutocapitalization(.never)
@@ -80,7 +80,7 @@ struct AuthFormView: View {
                             showPassword.toggle()
                         } label: {
                             Image(systemName: showPassword ? "eye.slash" : "eye")
-                                .foregroundStyle(.white.opacity(0.5))
+                                .foregroundStyle(AuthColors.ink.opacity(0.4))
                         }
                         .accessibilityLabel(showPassword ? "Скрыть пароль" : "Показать пароль")
                     }
@@ -90,7 +90,7 @@ struct AuthFormView: View {
                     Task { await submit() }
                 } label: {
                     if isSubmitting {
-                        ProgressView().tint(.black)
+                        ProgressView().tint(.white)
                     } else {
                         Text("Продолжить с email")
                     }
@@ -99,9 +99,9 @@ struct AuthFormView: View {
                 .disabled(isSubmitting)
 
                 HStack(spacing: 12) {
-                    Rectangle().fill(.white.opacity(0.12)).frame(height: 1)
-                    Text("или").font(.subheadline).foregroundStyle(.white.opacity(0.4))
-                    Rectangle().fill(.white.opacity(0.12)).frame(height: 1)
+                    Rectangle().fill(AuthColors.ink.opacity(0.1)).frame(height: 1)
+                    Text("или").font(.subheadline).foregroundStyle(AuthColors.ink.opacity(0.4))
+                    Rectangle().fill(AuthColors.ink.opacity(0.1)).frame(height: 1)
                 }
                 .padding(.vertical, 6)
 
@@ -113,7 +113,6 @@ struct AuthFormView: View {
                 .signInWithAppleButtonStyle(.black)
                 .frame(height: 54)
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(.white.opacity(0.12), lineWidth: 1))
                 // The button's label is fixed when it's created; rebuild it
                 // when the mode flips so it follows.
                 .id(mode)
@@ -131,7 +130,7 @@ struct AuthFormView: View {
                 } label: {
                     Text(mode == .signUp ? "Уже есть аккаунт? Войти" : "Нет аккаунта? Зарегистрироваться")
                         .font(.subheadline.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.6))
+                        .foregroundStyle(AuthColors.ink.opacity(0.55))
                 }
                 .padding(.top, 18)
             }
@@ -162,19 +161,20 @@ struct AuthFormView: View {
 
     private var passwordPrompt: Text {
         Text(mode == .signUp ? "Пароль (от \(minPasswordLength) символов)" : "Пароль")
-            .foregroundStyle(.white.opacity(0.4))
+            .foregroundStyle(AuthColors.ink.opacity(0.35))
     }
 
     private var legalText: some View {
         VStack(spacing: 2) {
             Text(mode == .signUp ? "Регистрируясь, вы соглашаетесь с" : "Продолжая, вы соглашаетесь с")
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(AuthColors.ink.opacity(0.5))
             HStack(spacing: 4) {
                 Button("Политикой конфиденциальности") { legalDocument = .privacy }
-                Text("и").foregroundStyle(.white.opacity(0.5))
+                Text("и").foregroundStyle(AuthColors.ink.opacity(0.5))
                 Button("Условиями") { legalDocument = .terms }
             }
-            .foregroundStyle(Palette.yellow)
+            .foregroundStyle(AuthColors.brandOrange)
+            .fontWeight(.semibold)
         }
         .font(.footnote)
         .multilineTextAlignment(.center)
@@ -242,7 +242,7 @@ struct AuthFormView: View {
     }
 }
 
-/// Dark input with an optional red error tag attached underneath.
+/// White input with an optional red error tag attached underneath.
 private struct AuthField<Content: View>: View {
     let error: String?
     @ViewBuilder let content: Content
@@ -250,13 +250,13 @@ private struct AuthField<Content: View>: View {
     var body: some View {
         VStack(spacing: 0) {
             content
-                .foregroundStyle(error == nil ? Color.white : Color(red: 1, green: 0.45, blue: 0.45))
+                .foregroundStyle(error == nil ? AuthColors.ink : Color(red: 0.8, green: 0.2, blue: 0.2))
                 .padding(.horizontal, 16)
                 .frame(height: 56)
-                .background(Color.white.opacity(0.07), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .background(.white, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
                 .overlay(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(error == nil ? Color.white.opacity(0.1) : Color.red.opacity(0.6), lineWidth: 1)
+                        .stroke(error == nil ? AuthColors.ink.opacity(0.1) : Color.red.opacity(0.6), lineWidth: 1)
                 )
 
             if let error {
@@ -274,7 +274,7 @@ private struct AuthField<Content: View>: View {
     }
 }
 
-/// Dark capsule at the top with an icon, the message and a close button.
+/// White capsule at the top with an icon, the message and a close button.
 private struct AuthToast: View {
     let message: String
     let onClose: () -> Void
@@ -283,23 +283,23 @@ private struct AuthToast: View {
         HStack(spacing: 14) {
             Image(systemName: "exclamationmark.circle")
                 .font(.title2)
-                .foregroundStyle(Color(red: 1, green: 0.4, blue: 0.4))
+                .foregroundStyle(Color(red: 0.85, green: 0.25, blue: 0.25))
             Text(message)
                 .font(.subheadline.weight(.medium))
-                .foregroundStyle(.white)
+                .foregroundStyle(AuthColors.ink)
                 .fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
             Button(action: onClose) {
                 Image(systemName: "xmark")
                     .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.6))
+                    .foregroundStyle(AuthColors.ink.opacity(0.45))
             }
             .accessibilityLabel("Закрыть")
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 14)
-        .background(Color(white: 0.16), in: RoundedRectangle(cornerRadius: 26, style: .continuous))
-        .shadow(color: .black.opacity(0.4), radius: 20, y: 8)
+        .background(.white, in: RoundedRectangle(cornerRadius: 26, style: .continuous))
+        .shadow(color: .black.opacity(0.15), radius: 20, y: 8)
         .sensoryFeedback(.error, trigger: message)
     }
 }
