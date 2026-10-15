@@ -19,16 +19,19 @@ struct MainTabView: View {
     }
     @State private var habitsViewModel = HabitsViewModel()
     @State private var showOnboarding = false
+    @State private var showCountryPrompt = false
+    private static let countryPromptKey = "countryPromptShown"
     @Environment(APIClient.self) private var apiClient
 
     var body: some View {
         #if DEBUG
-        // `-initialTab profile|invite|pro|login` opens that screen on its own.
+        // `-initialTab profile|invite|pro|login|signup|country` opens that screen on its own.
         switch UserDefaults.standard.string(forKey: "initialTab") {
         case "profile": NavigationStack { ProfileView() }
         case "invite": NavigationStack { InviteFriendsView() }
         case "pro": NavigationStack { SubscriptionView() }
         case "login", "signup": AuthFlowView()
+        case "country": NavigationStack { CountrySettingView(initial: nil, showsSkip: true) { _ in } }
         default: tabs
         }
         #else
@@ -57,8 +60,19 @@ struct MainTabView: View {
         .task {
             // Only a confirmed "not onboarded" opens the flow — a failed
             // request must not push existing users through it again.
-            if let me: Me = try? await apiClient.get("/me"), me.onboardedAt == nil {
+            guard let me: Me = try? await apiClient.get("/me") else { return }
+            if me.onboardedAt == nil {
                 showOnboarding = true
+            } else if me.country == nil, !UserDefaults.standard.bool(forKey: Self.countryPromptKey) {
+                // Accounts from before the onboarding asked for a country get
+                // asked once; "Позже" leaves it to Settings.
+                UserDefaults.standard.set(true, forKey: Self.countryPromptKey)
+                showCountryPrompt = true
+            }
+        }
+        .sheet(isPresented: $showCountryPrompt) {
+            NavigationStack {
+                CountrySettingView(initial: nil, showsSkip: true) { _ in }
             }
         }
         .fullScreenCover(isPresented: $showOnboarding) {

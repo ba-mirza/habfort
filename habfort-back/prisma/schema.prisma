@@ -26,6 +26,9 @@ model User {
   // Short shareable id ("LYUvMnBVR3"), like a Steam id — what people copy
   // and give to friends, so invites never expose the email or the UUID.
   publicId    String    @unique
+  // ISO 3166-1 alpha-2 ("KZ"), picked by the user — where people come from,
+  // and what regional prices and features will key off.
+  country     String?
   createdAt   DateTime  @default(now())
   // Set once the first-run onboarding is finished; that same step credits the
   // one-time welcome bonus, so null also means "bonus not granted yet".

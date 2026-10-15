@@ -17,9 +17,10 @@ struct RewardTemplate: Identifiable, Hashable {
 @MainActor
 @Observable
 final class OnboardingViewModel {
-    enum Step: Int, CaseIterable { case welcome, goal, howItWorks }
+    enum Step: Int, CaseIterable { case welcome, country, goal, howItWorks }
 
     var step: Step = .welcome
+    var country: String? = Country.deviceCountry?.code
     var selectedTemplate: RewardTemplate? = RewardTemplate.all.first
     var isCustom = false
     var customName = ""
@@ -92,6 +93,9 @@ final class OnboardingViewModel {
             }
             if let createdRewardId {
                 try await apiClient.put("/rewards/\(createdRewardId)/goal")
+            }
+            if let country {
+                let _: Me = try await apiClient.patch("/me", body: ["country": country])
             }
             let _: Me = try await apiClient.post("/me/onboarding")
             return true

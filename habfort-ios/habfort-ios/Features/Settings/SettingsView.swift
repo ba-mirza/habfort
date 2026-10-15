@@ -8,6 +8,7 @@ struct SettingsView: View {
     @State private var isConfirmingDeletion = false
     @State private var isDeleting = false
     @State private var deletionError: String?
+    @State private var country: String?
     @AppStorage("appTheme") private var appThemeRaw: String = AppTheme.system.rawValue
 
     private var theme: Binding<AppTheme> {
@@ -19,6 +20,16 @@ struct SettingsView: View {
 
     var body: some View {
         AppForm {
+            Section("Аккаунт") {
+                NavigationLink {
+                    CountrySettingView(initial: country) { country = $0 }
+                } label: {
+                    LabeledContent("Страна") {
+                        Text(country.flatMap(Country.named).map { "\($0.flag) \($0.name)" } ?? "Не выбрана")
+                    }
+                }
+            }
+
             Section("Оформление") {
                 Picker("Тема", selection: theme) {
                     ForEach(AppTheme.allCases) { theme in
@@ -76,6 +87,9 @@ struct SettingsView: View {
             Button("Ок", role: .cancel) {}
         } message: {
             Text(deletionError ?? "")
+        }
+        .task {
+            if let me: Me = try? await apiClient.get("/me") { country = me.country }
         }
         .navigationTitle("Настройки")
         .navigationBarTitleDisplayMode(.inline)

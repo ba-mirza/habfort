@@ -16,6 +16,7 @@ struct OnboardingView: View {
             Group {
                 switch viewModel.step {
                 case .welcome: welcomeStep
+                case .country: countryStep
                 case .goal: goalStep
                 case .howItWorks: howItWorksStep
                 }
@@ -53,6 +54,20 @@ struct OnboardingView: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 32)
             Spacer()
+        }
+    }
+
+    private var countryStep: some View {
+        VStack(spacing: 8) {
+            Text("Откуда вы?")
+                .font(.system(.title, design: .rounded, weight: .bold))
+                .padding(.top, 16)
+            Text("Нужно для цен подписки и будущих функций в вашей стране.")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+            CountryPicker(selection: $viewModel.country)
         }
     }
 
@@ -123,12 +138,15 @@ struct OnboardingView: View {
         }
         .buttonStyle(.borderedProminent)
         .controlSize(.large)
-        .disabled(viewModel.isSubmitting || (viewModel.step == .goal && !viewModel.isGoalValid))
+        .disabled(viewModel.isSubmitting
+                  || (viewModel.step == .goal && !viewModel.isGoalValid)
+                  || (viewModel.step == .country && viewModel.country == nil))
     }
 
     private var primaryTitle: String {
         switch viewModel.step {
         case .welcome: "Забрать жетоны"
+        case .country: "Дальше"
         case .goal: "Дальше"
         case .howItWorks: "Начать"
         }
@@ -136,7 +154,8 @@ struct OnboardingView: View {
 
     private func advance() async {
         switch viewModel.step {
-        case .welcome: viewModel.step = .goal
+        case .welcome: viewModel.step = .country
+        case .country: viewModel.step = .goal
         case .goal: viewModel.step = .howItWorks
         case .howItWorks:
             if await viewModel.finish(apiClient: apiClient) {

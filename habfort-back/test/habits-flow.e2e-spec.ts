@@ -452,6 +452,19 @@ describe('Habits full flow (e2e)', () => {
     const me = await request(app.getHttpServer()).get('/me').expect(200);
     expect(me.body.publicId).toMatch(/^[A-HJ-NP-Za-km-z2-9]{10}$/);
   });
+  it('saves the country as an ISO code and rejects anything else', async () => {
+    const res = await request(app.getHttpServer())
+      .patch('/me')
+      .send({ country: 'KZ' })
+      .expect(200);
+    expect(res.body.country).toBe('KZ');
+
+    await request(app.getHttpServer())
+      .patch('/me')
+      .send({ country: 'Kazakhstan' })
+      .expect(400);
+  });
+
   // Keep last: it wipes the test user.
   it('deletes the account and every row that belonged to it', async () => {
     await request(app.getHttpServer()).delete('/me').expect(204);
