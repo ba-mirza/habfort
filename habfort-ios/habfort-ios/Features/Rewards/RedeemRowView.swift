@@ -15,13 +15,13 @@ struct RedeemRowView: View {
                 }
                 .frame(height: 200)
                 .frame(maxWidth: .infinity)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
             }
 
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(redeem.rewardName)
-                        .font(.headline)
+                        .font(.body.weight(.semibold))
                     Text(ISO8601.shortDate(from: redeem.redeemedAt))
                         .font(.caption)
                         .foregroundStyle(.secondary)
@@ -46,7 +46,8 @@ struct RedeemRowView: View {
                     .foregroundStyle(Color.accentColor)
             }
         }
-        .padding(.vertical, 6)
+        .padding(14)
+        .card()
         .contentShape(Rectangle())
     }
 }

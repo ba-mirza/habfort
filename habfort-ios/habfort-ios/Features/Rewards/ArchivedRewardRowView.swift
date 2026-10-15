@@ -9,23 +9,21 @@ struct ArchivedRewardRowView: View {
             Image(systemName: "archivebox.fill")
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(.secondary)
-                .frame(width: 30, height: 30)
-                .background(Color.secondary.opacity(0.15), in: Circle())
+                .frame(width: 34, height: 34)
+                .card(fill: Color.secondary.opacity(0.12), radius: 10, bordered: false)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(reward.name)
-                    .font(.body)
+                    .font(.body.weight(.medium))
                     .foregroundStyle(.secondary)
-
-                HStack(spacing: 4) {
-                    Image(systemName: "seal.fill")
+                HStack(spacing: 3) {
                     Text("\(reward.costCoins)")
-                        .font(.subheadline.bold())
+                    Image(systemName: "seal.fill")
                     if let archivedAt = reward.archivedAt {
                         Text("· в архиве с \(ISO8601.shortDate(from: archivedAt))")
-                            .font(.caption)
                     }
                 }
+                .font(.caption)
                 .foregroundStyle(.secondary)
             }
 
@@ -33,14 +31,15 @@ struct ArchivedRewardRowView: View {
 
             Button(action: onRestore) {
                 Text("Вернуть")
-                    .font(.subheadline.weight(.medium))
+                    .font(.subheadline.weight(.semibold))
                     .foregroundStyle(Color.accentColor)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(Color.accentColor.opacity(0.15), in: Capsule())
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .background(Color.accentColor.opacity(0.12), in: Capsule())
             }
             .buttonStyle(.borderless)
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .card()
     }
 }

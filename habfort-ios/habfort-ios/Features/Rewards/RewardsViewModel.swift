@@ -34,14 +34,6 @@ final class RewardsViewModel {
         redeems.reduce(0) { $0 + $1.amountSpent }
     }
 
-    func canAfford(_ reward: Reward) -> Bool {
-        walletBalance >= reward.costCoins
-    }
-
-    func missingCoins(for reward: Reward) -> Int {
-        max(0, reward.costCoins - walletBalance)
-    }
-
     func load(apiClient: APIClient) async {
         isLoading = true
         errorMessage = nil

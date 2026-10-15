@@ -1,63 +1,76 @@
 import SwiftUI
 
+/// A wishlist reward: name, price, and how far the balance is from it — the
+/// distance is what keeps people going, so every reward shows its own bar.
 struct RewardRowView: View {
     let reward: Reward
-    let canAfford: Bool
-    let missingCoins: Int
+    let balance: Int
     let onRedeem: () -> Void
 
+    private var canAfford: Bool { balance >= reward.costCoins }
+
+    private var progress: Double {
+        reward.costCoins > 0 ? min(1, Double(balance) / Double(reward.costCoins)) : 1
+    }
+
     var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: "gift.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(Color.accentColor)
-                .frame(width: 30, height: 30)
-                .background(Color.accentColor.opacity(0.15), in: Circle())
+        VStack(alignment: .leading, spacing: 12) {
+            HStack(spacing: 12) {
+                Image(systemName: "gift.fill")
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Palette.yellow)
+                    .frame(width: 34, height: 34)
+                    .card(fill: Palette.yellow.opacity(0.16), radius: 10, bordered: false)
 
-            VStack(alignment: .leading, spacing: 2) {
-                HStack(spacing: 4) {
-                    Text(reward.name)
-                        .font(.body)
-                    if reward.isGoal == true {
-                        Image(systemName: "star.fill")
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
+                        Text(reward.name)
+                            .font(.body.weight(.medium))
+                            .lineLimit(2)
+                        if reward.isGoal == true {
+                            Image(systemName: "star.fill")
+                                .font(.caption)
+                                .foregroundStyle(Palette.yellow)
+                                .accessibilityLabel("Главная цель")
+                        }
+                    }
+                    HStack(spacing: 3) {
+                        Text("\(reward.costCoins)")
+                            .font(.subheadline.weight(.semibold))
+                        Image(systemName: "seal.fill")
                             .font(.caption)
-                            .foregroundStyle(.yellow)
-                            .accessibilityLabel("Главная цель")
+                            .foregroundStyle(Palette.yellow)
+                        if !canAfford {
+                            Text("· не хватает \(reward.costCoins - balance)")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                 }
 
-                HStack(spacing: 4) {
-                    Image(systemName: "seal.fill")
-                    Text("\(reward.costCoins)")
-                        .font(.subheadline.bold())
+                Spacer()
 
-                    if !canAfford {
-                        Text("· не хватает \(missingCoins)")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                    }
+                Button(action: onRedeem) {
+                    Text("Потратить")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(canAfford ? Color.white : Color.secondary)
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .background(canAfford ? Color.accentColor : Color.secondary.opacity(0.12), in: Capsule())
                 }
-                .foregroundStyle(canAfford ? Color.accentColor : .secondary)
+                // `.borderless` keeps the tap target on the button itself — a
+                // plain button in a List row makes the whole row trigger it.
+                .buttonStyle(.borderless)
+                .disabled(!canAfford)
             }
 
-            Spacer()
-
-            Button(action: onRedeem) {
-                Text("Потратить")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(canAfford ? Color.green : Color.secondary)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .background(
-                        (canAfford ? Color.green : Color.secondary).opacity(0.15),
-                        in: Capsule()
-                    )
+            if !canAfford {
+                ProgressView(value: progress)
+                    .tint(Color.accentColor)
+                    .accessibilityLabel("Прогресс до награды")
             }
-            // `.borderless` keeps the tap target on the button itself — a
-            // plain button in a List row makes the whole row trigger it.
-            .buttonStyle(.borderless)
-            .disabled(!canAfford)
         }
-        .padding(.vertical, 4)
+        .padding(14)
+        .card()
     }
 }

@@ -13,32 +13,42 @@ struct RewardsView: View {
 
     var body: some View {
         NavigationStack {
-            HeaderSheetScreen(
-                title: viewModel.section.displayName,
-                onRefresh: { await viewModel.load(apiClient: apiClient) }
-            ) {
-                RewardsHeaderView(
-                    walletBalance: viewModel.walletBalance,
-                    spentTotal: viewModel.spentTotal
-                )
-            } accessory: {
-                Button {
-                    isShowingCreateReward = true
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.headline)
-                }
-            } rows: {
-                Picker("Раздел", selection: $viewModel.section) {
-                    ForEach(RewardsViewModel.Section.allCases) { section in
-                        Text(section.displayName).tag(section)
+            VStack(spacing: 0) {
+                AccentHeader {
+                    HStack {
+                        AccentHeaderTitle(text: "Награды")
+                        Spacer()
+                        Button {
+                            isShowingCreateReward = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.headline.weight(.bold))
+                                .foregroundStyle(.black)
+                                .frame(width: 40, height: 40)
+                                .background(.white, in: Circle())
+                        }
+                        .accessibilityLabel("Новая награда")
                     }
+                    BalanceCard(balance: viewModel.walletBalance, spentTotal: viewModel.spentTotal)
                 }
-                .pickerStyle(.segmented)
-                .listRowSeparator(.hidden)
 
-                listContent
+                List {
+                    Picker("Раздел", selection: $viewModel.section) {
+                        ForEach(RewardsViewModel.Section.allCases) { section in
+                            Text(section.displayName).tag(section)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .cardRow(top: 16)
+
+                    listContent
+                }
+                .listStyle(.plain)
+                .scrollContentBackground(.hidden)
+                .refreshable { await viewModel.load(apiClient: apiClient) }
             }
+            .background(Color(.systemBackground))
+            .toolbar(.hidden, for: .navigationBar)
             .sheet(isPresented: $isShowingCreateReward) {
                 CreateRewardView(rewardsViewModel: viewModel)
             }
@@ -102,9 +112,11 @@ struct RewardsView: View {
                 ProgressView()
                 Spacer()
             }
+            .cardRow()
         } else if let errorMessage = viewModel.errorMessage {
             Text(errorMessage)
                 .foregroundStyle(.red)
+                .cardRow()
         } else {
             switch viewModel.section {
             case .rewards: rewardRows
@@ -119,14 +131,15 @@ struct RewardsView: View {
         if viewModel.rewards.isEmpty {
             Text("Пока нет наград. Добавь первую через +.")
                 .foregroundStyle(.secondary)
+                .cardRow()
         } else {
             ForEach(viewModel.rewards) { reward in
                 RewardRowView(
                     reward: reward,
-                    canAfford: viewModel.canAfford(reward),
-                    missingCoins: viewModel.missingCoins(for: reward),
+                    balance: viewModel.walletBalance,
                     onRedeem: { rewardPendingRedeem = reward }
                 )
+                .cardRow()
                 .swipeActions(edge: .leading) {
                     Button {
                         Task { await viewModel.toggleGoal(reward, apiClient: apiClient) }
@@ -152,11 +165,13 @@ struct RewardsView: View {
         if viewModel.archivedRewards.isEmpty {
             Text("Архив пуст.")
                 .foregroundStyle(.secondary)
+                .cardRow()
         } else {
             ForEach(viewModel.archivedRewards) { reward in
                 ArchivedRewardRowView(reward: reward) {
                     Task { await viewModel.restore(reward, apiClient: apiClient) }
                 }
+                .cardRow()
             }
         }
     }
@@ -166,11 +181,49 @@ struct RewardsView: View {
         if viewModel.redeems.isEmpty {
             Text("Пока ничего не потрачено.")
                 .foregroundStyle(.secondary)
+                .cardRow()
         } else {
             ForEach(viewModel.redeems) { redeem in
                 RedeemRowView(redeem: redeem)
                     .onTapGesture { editingRedeem = redeem }
+                    .cardRow()
             }
         }
+    }
+}
+
+/// Balance on the accent header — the number that decides what's affordable.
+private struct BalanceCard: View {
+    let balance: Int
+    let spentTotal: Int
+
+    var body: some View {
+        HStack(alignment: .bottom) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("Доступно")
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.secondary)
+                HStack(spacing: 6) {
+                    Text("\(balance)")
+                        .font(.system(size: 34, weight: .heavy, design: .rounded))
+                        .contentTransition(.numericText(value: Double(balance)))
+                    Image(systemName: "seal.fill")
+                        .font(.title3)
+                        .foregroundStyle(Palette.yellow)
+                }
+            }
+            Spacer()
+            if spentTotal > 0 {
+                VStack(alignment: .trailing, spacing: 4) {
+                    Text("Потрачено")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("\(spentTotal)")
+                        .font(.system(.headline, design: .rounded, weight: .bold))
+                }
+            }
+        }
+        .padding(16)
+        .card(bordered: false)
     }
 }
