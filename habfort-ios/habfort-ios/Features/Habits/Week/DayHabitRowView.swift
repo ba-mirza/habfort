@@ -13,7 +13,7 @@ struct DayHabitRowView: View {
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(entry.name)
-                    .font(.body)
+                    .font(.system(.body, design: .rounded, weight: .semibold))
                     .foregroundStyle(entry.status == .planned ? .primary : .secondary)
                 Label(statusText, systemImage: entry.type.iconName)
                     .font(.caption)
@@ -22,7 +22,10 @@ struct DayHabitRowView: View {
 
             Spacer()
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
+        .padding(.trailing, 14)
+        .padding(.leading, 4)
+        .brutalCard()
         .accessibilityElement(children: .combine)
     }
 

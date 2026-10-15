@@ -38,6 +38,11 @@ export class HistoryController {
     return this.historyService.activity(user.sub, query);
   }
 
+  @Get('streak')
+  streak(@CurrentUser() user: SupabaseJwtPayload) {
+    return this.historyService.streak(user.sub);
+  }
+
   @Get('discipline')
   discipline(
     @CurrentUser() user: SupabaseJwtPayload,

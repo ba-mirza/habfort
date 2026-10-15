@@ -7,6 +7,7 @@ import {
 } from '../../generated/prisma';
 import {
   addDays,
+  diffDays,
   normalizeDate,
   today,
   toDateKey,
@@ -140,6 +141,37 @@ export class HistoryService {
       bestDay,
       byDay,
     };
+  }
+
+  /**
+   * Days in a row with at least one completion. Today without a completion
+   * yet doesn't break it — the day isn't over — so the count then runs up to
+   * yesterday. `best` is the longest run within the activity window (a year).
+   */
+  async streak(userId: string) {
+    const { byDay } = await this.activity(userId, {});
+    const days = new Set(byDay.map((day) => day.date));
+    const todayDate = today();
+    const completedToday = days.has(toDateKey(todayDate));
+
+    let current = 0;
+    let cursor = completedToday ? todayDate : addDays(todayDate, -1);
+    while (days.has(toDateKey(cursor))) {
+      current++;
+      cursor = addDays(cursor, -1);
+    }
+
+    let best = 0;
+    let run = 0;
+    let previous: Date | null = null;
+    for (const { date } of byDay) {
+      const day = normalizeDate(date);
+      run = previous && diffDays(previous, day) === 1 ? run + 1 : 1;
+      best = Math.max(best, run);
+      previous = day;
+    }
+
+    return { current, best, completedToday };
   }
 
   /**

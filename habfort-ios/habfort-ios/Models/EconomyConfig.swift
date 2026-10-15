@@ -13,6 +13,8 @@ nonisolated struct EconomyConfig: Decodable {
     let fullDayBonus: FullDayBonus
     /// One-time grant at the end of onboarding.
     let welcomeBonus: Int
+    /// XP per coin earned — experience is derived from coins, never stored.
+    let xpPerCoin: Int
     let rewardMinCostCoins: Int
 
     func coins(for difficulty: HabitDifficulty) -> Int? {

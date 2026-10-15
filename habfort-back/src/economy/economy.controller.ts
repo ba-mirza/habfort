@@ -38,6 +38,7 @@ export class EconomyController {
       welcomeBonus: this.configService.getOrThrow<number>(
         'habits.welcomeBonus',
       ),
+      xpPerCoin: this.configService.getOrThrow<number>('habits.xpPerCoin'),
       rewardMinCostCoins: this.configService.getOrThrow<number>(
         'rewards.minCostCoins',
       ),

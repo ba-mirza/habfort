@@ -396,4 +396,32 @@ describe('Habits full flow (e2e)', () => {
       .expect(200);
     expect(cleared.body.note).toBeNull();
   });
+  it('counts the day streak from days with at least one completion', async () => {
+    const res = await request(app.getHttpServer())
+      .get('/history/streak')
+      .expect(200);
+    // Everything in this suite happened today.
+    expect(res.body).toEqual({ current: 1, best: 1, completedToday: true });
+  });
+  it('extends the streak across consecutive past days and stops at a gap', async () => {
+    const daysAgo = (n: number) => new Date(Date.now() - n * 86_400_000);
+    for (const n of [1, 2, 4]) {
+      await prisma.habitHistory.create({
+        data: {
+          userId,
+          habitName: `Past ${n}`,
+          habitType: 'INSTANT',
+          status: 'COMPLETED',
+          coinsAwarded: 5,
+          startedAt: daysAgo(n),
+          endedAt: daysAgo(n),
+        },
+      });
+    }
+    const res = await request(app.getHttpServer())
+      .get('/history/streak')
+      .expect(200);
+    // today, 1 and 2 days ago in a row; 3 days ago is the gap.
+    expect(res.body).toEqual({ current: 3, best: 3, completedToday: true });
+  });
 });

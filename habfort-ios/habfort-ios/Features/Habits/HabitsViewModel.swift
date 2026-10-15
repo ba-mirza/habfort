@@ -6,6 +6,8 @@ final class HabitsViewModel {
     private(set) var habits: [Habit] = []
     private(set) var walletBalance: Int = 0
     private(set) var goal: Reward?
+    private(set) var streak: DayStreak?
+    private(set) var economy: EconomyConfig?
     /// This week's closed entries, for the day strip's past days.
     private(set) var weekHistory: [HabitHistoryEntry] = []
     private(set) var isLoading = false
@@ -33,7 +35,13 @@ final class HabitsViewModel {
             async let balanceTask: WalletBalance = apiClient.get("/wallet/balance")
             async let weekTask: [HabitHistoryEntry] = apiClient.get(Self.weekHistoryPath())
             async let rewardsTask: [Reward] = apiClient.get("/rewards")
-            let (fetchedHabits, balance, week, rewards) = try await (habitsTask, balanceTask, weekTask, rewardsTask)
+            async let streakTask: DayStreak = apiClient.get("/history/streak")
+            let (fetchedHabits, balance, week, rewards, fetchedStreak) =
+                try await (habitsTask, balanceTask, weekTask, rewardsTask, streakTask)
+            streak = fetchedStreak
+            if economy == nil {
+                economy = try? await apiClient.get("/economy")
+            }
             goal = rewards.goal
             weekHistory = week
             // Animated so a habit that closed out server-side slides away.
@@ -108,6 +116,16 @@ final class HabitsViewModel {
         merged.currentStreak = habits[index].currentStreak
         merged.isCompletedToday = habits[index].isCompletedToday
         habits[index] = merged
+    }
+
+    /// What completing the habit pays, for the card's reward column.
+    func reward(for habit: Habit) -> (coins: Int, xp: Int)? {
+        guard let economy, let coins = economy.coins(for: habit.difficulty) else { return nil }
+        return (coins, coins * economy.xpPerCoin)
+    }
+
+    var todaysDoneCount: Int {
+        todaysHabits.filter { $0.isCompletedToday == true }.count
     }
 
     private static func weekHistoryPath() -> String {
